@@ -1,6 +1,67 @@
 # Vue Firebase Starter
 
-A boilerplate template for Vue 3 applications with Vite, Tailwind CSS, and Firebase.
+A boilerplate template for Vue 3 applications with Vite, Tailwind CSS, and Firebase — pre-configured with **Claude Code PM** for spec-driven development and **WHobson Agents** for intelligent automation.
+
+## Claude Code Integration
+
+This template comes pre-configured with powerful Claude Code tooling for AI-assisted development:
+
+### Claude Code PM (CCPM)
+
+[Claude Code PM](https://github.com/automazeio/ccpm) is a workflow system that enables spec-driven development using GitHub Issues and Git worktrees. It allows multiple AI agents to work in parallel on decomposed tasks while maintaining full traceability from requirements to production code.
+
+**Key Features:**
+- **Context Preservation** - Project state persists across sessions through local workspace files
+- **Parallel Execution** - Multiple agents work on independent tasks using Git worktrees
+- **GitHub Integration** - Issues serve as the single source of truth with automatic sync
+- **Spec-Driven Development** - Every code change traces back to documented specifications
+- **Agent Coordination** - Orchestration rules in `.claude/rules/agent-coordination.md` enable multiple agents to work safely in parallel
+
+**Quick Start:**
+```bash
+# Initialize the PM system
+/pm:init
+
+# Create a new PRD
+/pm:prd-new feature-name
+
+# Convert PRD to implementation plan
+/pm:prd-parse feature-name
+
+# Decompose into tasks
+/pm:epic-decompose feature-name
+
+# Sync to GitHub Issues
+/pm:epic-sync feature-name
+
+# Start working on an issue
+/pm:issue-start [issue-number]
+```
+
+### WHobson Agents Plugin
+
+[WHobson Agents](https://github.com/wshobson/agents) provides a comprehensive system of **100 specialized AI agents**, **15 workflow orchestrators**, **110 agent skills**, and **76 development tools** organized into **68 focused plugins**.
+
+**Key Features:**
+- **Granular Architecture** - Each plugin operates independently (~300 tokens per plugin)
+- **Progressive Disclosure** - Skills load knowledge only when needed
+- **Comprehensive Coverage** - Spans 23 categories from development to security
+- **Three-Tier Model Strategy** - Opus 4.5 for critical tasks, Sonnet/Haiku for support
+
+**Installation:**
+```bash
+# Add the marketplace
+/plugin marketplace add wshobson/agents
+
+# Install specific plugins as needed
+/plugin install python-development
+/plugin install kubernetes-operations
+/plugin install security-scanning
+```
+
+> **Note:** Install plugins, not individual agents. Agent names alone won't work; you must install their parent plugin.
+
+---
 
 ## Tech Stack
 
