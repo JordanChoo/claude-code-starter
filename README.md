@@ -19,7 +19,7 @@ This template comes pre-configured with powerful Claude Code tooling for AI-assi
 
 **Quick Start:**
 ```bash
-# Initialize the PM system
+# Initialize the PM system (required after cloning)
 /pm:init
 
 # Create a new PRD
