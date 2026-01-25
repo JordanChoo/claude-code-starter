@@ -21,8 +21,9 @@ if [ -d ".claude/epics" ]; then
       completion=$(grep "^completion:" "$updates_dir/progress.md" | head -1 | sed 's/^completion: *//')
       [ -z "$completion" ] && completion="0%"
 
-      # Get task name from the task file
-      task_file=".claude/epics/$epic_name/$issue_num.md"
+      # Get task name from the task file (try synced format first, then legacy)
+      task_file=$(ls ".claude/epics/$epic_name/$issue_num"-*.md 2>/dev/null | head -1)
+      [ -z "$task_file" ] && task_file=".claude/epics/$epic_name/$issue_num.md"
       if [ -f "$task_file" ]; then
         task_name=$(grep "^name:" "$task_file" | head -1 | sed 's/^name: *//')
       else

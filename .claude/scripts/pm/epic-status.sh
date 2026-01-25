@@ -45,9 +45,33 @@ else
   closed=0
   blocked=0
 
-  # Use find to safely iterate over task files
-  for task_file in "$epic_dir"/[0-9]*.md; do
+  # Count synced task files (format: {issue-number}-{task-name}.md)
+  for task_file in "$epic_dir"/[0-9]*-*.md; do
     [ -f "$task_file" ] || continue
+    ((total++))
+
+    task_status=$(grep "^status:" "$task_file" | head -1 | sed 's/^status: *//')
+    deps=$(grep "^depends_on:" "$task_file" | head -1 | sed 's/^depends_on: *\[//' | sed 's/\]//')
+
+    if [ "$task_status" = "closed" ] || [ "$task_status" = "completed" ]; then
+      ((closed++))
+    elif [ -n "$deps" ] && [ "$deps" != "depends_on:" ]; then
+      ((blocked++))
+    else
+      ((open++))
+    fi
+  done
+
+  # Count unsynced task files (format: {task-name}.md, no number prefix)
+  for task_file in "$epic_dir"/*.md; do
+    [ -f "$task_file" ] || continue
+    filename=$(basename "$task_file")
+
+    # Skip epic.md, github-mapping.md, and already-counted synced files
+    [[ "$filename" == "epic.md" ]] && continue
+    [[ "$filename" == "github-mapping.md" ]] && continue
+    [[ "$filename" =~ ^[0-9]+-.*\.md$ ]] && continue
+
     ((total++))
 
     task_status=$(grep "^status:" "$task_file" | head -1 | sed 's/^status: *//')

@@ -49,10 +49,12 @@ task_count=0
 open_count=0
 closed_count=0
 
-for task_file in "$epic_dir"/[0-9]*.md; do
+# First show synced tasks (format: {issue-number}-{task-name}.md)
+for task_file in "$epic_dir"/[0-9]*-*.md; do
   [ -f "$task_file" ] || continue
 
-  task_num=$(basename "$task_file" .md)
+  filename=$(basename "$task_file" .md)
+  task_num=$(echo "$filename" | cut -d'-' -f1)
   task_name=$(grep "^name:" "$task_file" | head -1 | sed 's/^name: *//')
   task_status=$(grep "^status:" "$task_file" | head -1 | sed 's/^status: *//')
   parallel=$(grep "^parallel:" "$task_file" | head -1 | sed 's/^parallel: *//')
@@ -62,6 +64,32 @@ for task_file in "$epic_dir"/[0-9]*.md; do
     ((closed_count++))
   else
     echo "  ⬜ #$task_num - $task_name"
+    [ "$parallel" = "true" ] && echo -n " (parallel)"
+    ((open_count++))
+  fi
+
+  ((task_count++))
+done
+
+# Then show unsynced tasks (format: {task-name}.md, no number prefix)
+for task_file in "$epic_dir"/*.md; do
+  [ -f "$task_file" ] || continue
+  filename=$(basename "$task_file")
+
+  # Skip epic.md, github-mapping.md, and already-synced files
+  [[ "$filename" == "epic.md" ]] && continue
+  [[ "$filename" == "github-mapping.md" ]] && continue
+  [[ "$filename" =~ ^[0-9]+-.*\.md$ ]] && continue
+
+  task_name=$(grep "^name:" "$task_file" | head -1 | sed 's/^name: *//')
+  task_status=$(grep "^status:" "$task_file" | head -1 | sed 's/^status: *//')
+  parallel=$(grep "^parallel:" "$task_file" | head -1 | sed 's/^parallel: *//')
+
+  if [ "$task_status" = "closed" ] || [ "$task_status" = "completed" ]; then
+    echo "  ✅ [unsynced] $task_name"
+    ((closed_count++))
+  else
+    echo "  ⬜ [unsynced] $task_name"
     [ "$parallel" = "true" ] && echo -n " (parallel)"
     ((open_count++))
   fi

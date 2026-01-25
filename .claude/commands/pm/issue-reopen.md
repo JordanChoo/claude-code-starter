@@ -15,7 +15,8 @@ Reopen a closed issue.
 
 ### 1. Find Local Task File
 
-Search for task file with `github:.*issues/$ARGUMENTS` in frontmatter.
+First check if `.claude/epics/*/$ARGUMENTS-*.md` exists (synced naming: {issue-number}-{task-name}.md).
+If not found, search for task file with `github:.*issues/$ARGUMENTS` in frontmatter (legacy naming).
 If not found: "❌ No local task for issue #$ARGUMENTS"
 
 ### 2. Update Local Status

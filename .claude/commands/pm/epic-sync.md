@@ -17,8 +17,8 @@ Push epic and tasks to GitHub as issues.
 # Verify epic exists
 test -f .claude/epics/$ARGUMENTS/epic.md || echo "❌ Epic not found. Run: /pm:prd-parse $ARGUMENTS"
 
-# Count task files
-ls .claude/epics/$ARGUMENTS/*.md 2>/dev/null | grep -v epic.md | wc -l
+# Count task files (exclude epic.md and github-mapping.md)
+ls .claude/epics/$ARGUMENTS/*.md 2>/dev/null | grep -vE '(epic|github-mapping)\.md$' | wc -l
 ```
 
 If no tasks found: "❌ No tasks to sync. Run: /pm:epic-decompose $ARGUMENTS"
@@ -142,7 +142,8 @@ fi
 
 Count task files to determine strategy:
 ```bash
-task_count=$(ls .claude/epics/$ARGUMENTS/[0-9][0-9][0-9].md 2>/dev/null | wc -l)
+# Count task files (exclude epic.md, github-mapping.md, and already-synced files with number prefix)
+task_count=$(ls .claude/epics/$ARGUMENTS/*.md 2>/dev/null | grep -vE '(epic|github-mapping)\.md$' | grep -vE '/[0-9]+-' | wc -l)
 ```
 
 ### For Small Batches (< 5 tasks): Sequential Creation
@@ -150,34 +151,38 @@ task_count=$(ls .claude/epics/$ARGUMENTS/[0-9][0-9][0-9].md 2>/dev/null | wc -l)
 ```bash
 if [ "$task_count" -lt 5 ]; then
   # Create sequentially for small batches
-  for task_file in .claude/epics/$ARGUMENTS/[0-9][0-9][0-9].md; do
+  # Find unsynced task files (no number prefix, exclude epic.md and github-mapping.md)
+  for task_file in $(ls .claude/epics/$ARGUMENTS/*.md 2>/dev/null | grep -vE '(epic|github-mapping)\.md$' | grep -vE '/[0-9]+-'); do
     [ -f "$task_file" ] || continue
 
     # Extract task name from frontmatter
-    task_name=$(grep '^name:' "$task_file" | sed 's/^name: *//')
+    task_title=$(grep '^name:' "$task_file" | sed 's/^name: *//')
+
+    # Get the kebab-case filename (without .md) for renaming
+    task_slug=$(basename "$task_file" .md)
 
     # Strip frontmatter from task content
     sed '1,/^---$/d; 1,/^---$/d' "$task_file" > /tmp/task-body.md
 
     # Create sub-issue with labels
     if [ "$use_subissues" = true ]; then
-      task_number=$(gh sub-issue create \
+      issue_number=$(gh sub-issue create \
         --parent "$epic_number" \
-        --title "$task_name" \
+        --title "$task_title" \
         --body-file /tmp/task-body.md \
         --label "task,epic:$ARGUMENTS" \
         --json number -q .number)
     else
-      task_number=$(gh issue create \
+      issue_number=$(gh issue create \
         --repo "$REPO" \
-        --title "$task_name" \
+        --title "$task_title" \
         --body-file /tmp/task-body.md \
         --label "task,epic:$ARGUMENTS" \
         --json number -q .number)
     fi
 
-    # Record mapping for renaming
-    echo "$task_file:$task_number" >> /tmp/task-mapping.txt
+    # Record mapping: old_file:issue_number:task_slug
+    echo "$task_file:$issue_number:$task_slug" >> /tmp/task-mapping.txt
   done
 
   # After creating all issues, update references and rename files
@@ -217,20 +222,21 @@ Task:
     - {list of 3-4 task files}
 
     For each task file:
-    1. Extract task name from frontmatter
-    2. Strip frontmatter using: sed '1,/^---$/d; 1,/^---$/d'
-    3. Create sub-issue using:
+    1. Extract task title from frontmatter (name field)
+    2. Get task slug from filename (e.g., setup-database from setup-database.md)
+    3. Strip frontmatter using: sed '1,/^---$/d; 1,/^---$/d'
+    4. Create sub-issue using:
        - If gh-sub-issue available:
-         gh sub-issue create --parent $epic_number --title "$task_name" \
+         gh sub-issue create --parent $epic_number --title "$task_title" \
            --body-file /tmp/task-body.md --label "task,epic:$ARGUMENTS"
-       - Otherwise: 
-         gh issue create --repo "$REPO" --title "$task_name" --body-file /tmp/task-body.md \
+       - Otherwise:
+         gh issue create --repo "$REPO" --title "$task_title" --body-file /tmp/task-body.md \
            --label "task,epic:$ARGUMENTS"
-    4. Record: task_file:issue_number
+    5. Record: task_file:issue_number:task_slug
 
     IMPORTANT: Always include --label parameter with "task,epic:$ARGUMENTS"
 
-    Return mapping of files to issue numbers.
+    Return mapping of files to issue numbers and slugs.
 ```
 
 Consolidate results from parallel agents:
@@ -246,30 +252,29 @@ cat /tmp/batch-*/mapping.txt >> /tmp/task-mapping.txt
 
 ### 3. Rename Task Files and Update References
 
-First, build a mapping of old numbers to new issue IDs:
+First, build a mapping of old task names to new issue IDs:
 ```bash
-# Create mapping from old task numbers (001, 002, etc.) to new issue IDs
+# Create mapping from old task slugs to new issue IDs
 > /tmp/id-mapping.txt
-while IFS=: read -r task_file task_number; do
-  # Extract old number from filename (e.g., 001 from 001.md)
-  old_num=$(basename "$task_file" .md)
-  echo "$old_num:$task_number" >> /tmp/id-mapping.txt
+while IFS=: read -r task_file issue_number task_slug; do
+  echo "$task_slug:$issue_number" >> /tmp/id-mapping.txt
 done < /tmp/task-mapping.txt
 ```
 
 Then rename files and update all references:
 ```bash
 # Process each task file
-while IFS=: read -r task_file task_number; do
-  new_name="$(dirname "$task_file")/${task_number}.md"
+while IFS=: read -r task_file issue_number task_slug; do
+  # New filename format: {issue-number}-{task-slug}.md
+  new_name="$(dirname "$task_file")/${issue_number}-${task_slug}.md"
 
   # Read the file content
   content=$(cat "$task_file")
 
-  # Update depends_on and conflicts_with references
-  while IFS=: read -r old_num new_num; do
-    # Update arrays like [001, 002] to use new issue numbers
-    content=$(echo "$content" | sed "s/\b$old_num\b/$new_num/g")
+  # Update depends_on and conflicts_with references from task slugs to issue numbers
+  while IFS=: read -r old_slug new_num; do
+    # Update arrays like [setup-database, create-api] to use new issue numbers
+    content=$(echo "$content" | sed "s/\b$old_slug\b/$new_num/g")
   done < /tmp/id-mapping.txt
 
   # Write updated content to new file
@@ -281,7 +286,7 @@ while IFS=: read -r task_file task_number; do
   # Update github field in frontmatter
   # Add the GitHub URL to the frontmatter
   repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-  github_url="https://github.com/$repo/issues/$task_number"
+  github_url="https://github.com/$repo/issues/$issue_number"
 
   # Update frontmatter with GitHub URL and current timestamp
   current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -342,12 +347,13 @@ cat > /tmp/tasks-section.md << 'EOF'
 ## Tasks Created
 EOF
 
-# Add each task with its real issue number
-for task_file in .claude/epics/$ARGUMENTS/[0-9]*.md; do
+# Add each task with its real issue number (synced files have format: {number}-{name}.md)
+for task_file in .claude/epics/$ARGUMENTS/[0-9]*-*.md; do
   [ -f "$task_file" ] || continue
 
-  # Get issue number (filename without .md)
-  issue_num=$(basename "$task_file" .md)
+  # Get issue number from filename (e.g., 42 from 42-setup-database.md)
+  filename=$(basename "$task_file" .md)
+  issue_num=$(echo "$filename" | cut -d'-' -f1)
 
   # Get task name from frontmatter
   task_name=$(grep '^name:' "$task_file" | sed 's/^name: *//')
@@ -360,8 +366,8 @@ for task_file in .claude/epics/$ARGUMENTS/[0-9]*.md; do
 done
 
 # Add summary statistics
-total_count=$(ls .claude/epics/$ARGUMENTS/[0-9]*.md 2>/dev/null | wc -l)
-parallel_count=$(grep -l '^parallel: true' .claude/epics/$ARGUMENTS/[0-9]*.md 2>/dev/null | wc -l)
+total_count=$(ls .claude/epics/$ARGUMENTS/[0-9]*-*.md 2>/dev/null | wc -l)
+parallel_count=$(grep -l '^parallel: true' .claude/epics/$ARGUMENTS/[0-9]*-*.md 2>/dev/null | wc -l)
 sequential_count=$((total_count - parallel_count))
 
 cat >> /tmp/tasks-section.md << EOF
@@ -404,11 +410,12 @@ Epic: #${epic_number} - https://github.com/${repo}/issues/${epic_number}
 Tasks:
 EOF
 
-# Add each task mapping
-for task_file in .claude/epics/$ARGUMENTS/[0-9]*.md; do
+# Add each task mapping (synced files have format: {number}-{name}.md)
+for task_file in .claude/epics/$ARGUMENTS/[0-9]*-*.md; do
   [ -f "$task_file" ] || continue
 
-  issue_num=$(basename "$task_file" .md)
+  filename=$(basename "$task_file" .md)
+  issue_num=$(echo "$filename" | cut -d'-' -f1)
   task_name=$(grep '^name:' "$task_file" | sed 's/^name: *//')
 
   echo "- #${issue_num}: ${task_name} - https://github.com/${repo}/issues/${issue_num}" >> .claude/epics/$ARGUMENTS/github-mapping.md
@@ -441,7 +448,7 @@ echo "✅ Created worktree: ../epic-$ARGUMENTS"
   - Epic: #{epic_number} - {epic_title}
   - Tasks: {count} sub-issues created
   - Labels applied: epic, task, epic:{name}
-  - Files renamed: 001.md → {issue_id}.md
+  - Files renamed: {task-name}.md → {issue_number}-{task-name}.md
   - References updated: depends_on/conflicts_with now use issue IDs
   - Worktree: ../epic-$ARGUMENTS
 
