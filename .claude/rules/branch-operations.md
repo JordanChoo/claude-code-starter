@@ -2,6 +2,33 @@
 
 Git branches enable parallel development by allowing multiple developers to work on the same repository with isolated changes.
 
+## Mandatory Epic Branch Isolation Rule
+
+> **CRITICAL**: Every epic MUST have its own dedicated branch created from the main branch. No epic work should ever be done directly on the main branch.
+
+### Why This Is Required
+
+1. **Development Isolation** - Changes are contained until ready for merge
+2. **Easy Rollback** - Entire epic can be discarded without affecting main
+3. **Parallel Development** - Multiple epics can progress simultaneously
+4. **Code Review** - All epic changes go through PR review before merge
+5. **Clean History** - Main branch remains stable and deployable
+
+### Prohibited Actions
+
+- ❌ Working on epic tasks directly in main branch
+- ❌ Creating epic branches from branches other than main
+- ❌ Merging incomplete epics into main
+- ❌ Force pushing to main branch
+
+### Verification Before Starting Work
+
+Before any epic work begins, verify:
+
+1. [ ] Epic branch exists: `git branch -a | grep epic/{name}`
+2. [ ] Branch was created from latest main
+3. [ ] Branch is pushed to remote with upstream tracking
+
 ## Creating Branches
 
 Always create branches from a clean main branch:
