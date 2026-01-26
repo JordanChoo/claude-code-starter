@@ -157,16 +157,45 @@ Use ad-hoc requests for small tweaks. Use the PM system for features.
 
 ## Extending with WHobson Agents
 
-For additional specialized capabilities, you can install the [WHobson Agents](https://github.com/wshobson/agents) plugin. It provides **100+ specialized AI agents** across categories like security, testing, DevOps, and more.
+For additional specialized capabilities, install plugins from the [WHobson Agents](https://github.com/wshobson/agents) marketplace. It provides **100+ specialized AI agents** across categories like security, testing, DevOps, and more.
+
+### Recommended Plugins for This Stack
 
 ```bash
-# Add the marketplace
+# Add the marketplace (first time only)
 /plugin marketplace add wshobson/agents
 
-# Install plugins as needed
-/plugin install security-scanning
-/plugin install api-development
+# Install recommended plugins
+/plugin install javascript-typescript --global
+/plugin install full-stack-orchestration --global
+/plugin install security-scanning --global
+/plugin install code-review-ai --global
+/plugin install debugging-toolkit --global
+/plugin install git-pr-workflows --global
+/plugin install code-documentation --global
 ```
+
+### Plugin Reference
+
+| Plugin | Purpose | When to Use |
+|--------|---------|-------------|
+| `javascript-typescript` | TypeScript patterns, advanced typing | During implementation |
+| `full-stack-orchestration` | Coordinates 7+ agents for complete features | Feature development spanning Vue + Firebase |
+| `security-scanning` | Vulnerability detection | Before closing tasks or deploying |
+| `code-review-ai` | Code quality analysis | Before PRs |
+| `debugging-toolkit` | Troubleshooting help | When stuck on bugs |
+| `git-pr-workflows` | Git and PR automation | Creating PRs, branch management |
+| `code-documentation` | Documentation generation | Documenting code and APIs |
+
+### Using Plugins with the PM Workflow
+
+Plugins enhance your existing workflow without changing it:
+
+1. **Install plugins once** (globally available across projects)
+2. **Start tasks normally** with `/pm:issue-start [number]`
+3. **Plugins work automatically** during implementation
+4. **Run security scans** before `/pm:issue-close` with `/security-scanning:security-audit`
+5. **Use orchestration** for complex features with `/full-stack-orchestration:full-stack-feature "feature name"`
 ## Tips for Working with Claude Code
 
 1. **Be specific about behavior** — "Show a loading spinner while saving" is better than "add loading state"
