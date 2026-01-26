@@ -258,14 +258,53 @@ npm run lint:fix  # Auto-fix lint issues
 
 ## Deployment
 
-When you're ready to deploy, ask Claude Code:
+### First-Time Setup
+
+Before your first deployment, initialize Firebase in your project:
+
+```bash
+firebase login
+firebase use --add  # Select your Firebase project
+```
+
+### Deploy Commands
+
+```bash
+# Full deployment (build + hosting + Firestore rules)
+npm run deploy
+
+# Deploy only Firestore security rules
+npm run deploy:rules
+
+# Deploy only hosting (skip rules)
+npm run deploy:hosting
+```
+
+### What Gets Deployed
+
+| Command | Builds App | Deploys Hosting | Deploys Firestore Rules |
+|---------|------------|-----------------|-------------------------|
+| `npm run deploy` | Yes | Yes | Yes |
+| `npm run deploy:rules` | No | No | Yes |
+| `npm run deploy:hosting` | No | Yes | No |
+
+### Important: Deploy Security Rules
+
+The `firestore.rules` file contains security rules that protect your database. These rules are **automatically included** when you run `npm run deploy`.
+
+If you only want to update security rules without redeploying the app:
+
+```bash
+npm run deploy:rules
+```
+
+### Manual Deployment
+
+You can also ask Claude Code:
 
 > "Help me deploy this to Firebase Hosting"
 
-Claude Code will guide you through:
-1. Building the production bundle
-2. Configuring Firebase Hosting (if not already done)
-3. Deploying to your Firebase project
+Claude Code will guide you through the process.
 
 ## Tech Stack (For Reference)
 
