@@ -141,6 +141,13 @@ For additional specialized capabilities, you can install the [WHobson Agents](ht
 /plugin install security-scanning
 /plugin install api-development
 ```
+## Tips for Working with Claude Code
+
+1. **Be specific about behavior** — "Show a loading spinner while saving" is better than "add loading state"
+2. **Describe the user experience** — "When the user clicks Save, disable the button and show 'Saving...'"
+3. **Ask for explanations** — "Explain what this component does" helps you understand and review
+4. **Iterate incrementally** — Build features in small steps, reviewing each one
+5. **Use the PM system** — For anything beyond a quick fix, create a PRD first
 
 ## Project Structure
 
@@ -158,14 +165,6 @@ src/
 ```
 
 You don't need to memorize this — just ask Claude Code where things go.
-
-## Tips for Working with Claude Code
-
-1. **Be specific about behavior** — "Show a loading spinner while saving" is better than "add loading state"
-2. **Describe the user experience** — "When the user clicks Save, disable the button and show 'Saving...'"
-3. **Ask for explanations** — "Explain what this component does" helps you understand and review
-4. **Iterate incrementally** — Build features in small steps, reviewing each one
-5. **Use the PM system** — For anything beyond a quick fix, create a PRD first
 
 ## Testing
 
