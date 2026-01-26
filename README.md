@@ -22,7 +22,7 @@ This template comes pre-configured with:
 - **Routing** — Protected routes that redirect unauthenticated users
 - **State Management** — Pinia store for auth state
 - **Styling** — Tailwind CSS configured and ready
-- **PM System** — Claude Code PM commands for spec-driven development
+- **PM System** — [Claude Code PM](https://github.com/automazeio/ccpm) commands for spec-driven development
 - **ESLint + Husky** — Linting and pre-commit hooks configured
 
 ## Getting Started
