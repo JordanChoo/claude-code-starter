@@ -12,6 +12,13 @@ Always run tests before committing:
 - `npm test` or equivalent for your stack
 - `npm run lint` to check for lint errors
 
+## Security
+
+Always run security scan before committing:
+- `/security-scanning:security-audit`
+
+See [.claude/rules/security-scanning.md](.claude/rules/security-scanning.md) for full security workflow.
+
 ## Code Style
 
 Follow existing patterns in the codebase.
