@@ -1,21 +1,34 @@
 # DateTime Rule
 
+## Rule Priority
+
+This rule has **HIGHEST PRIORITY** and must be followed by all commands that:
+- Create new files with frontmatter
+- Update existing files with frontmatter
+- Track timestamps or progress
+- Log any time-based information
+
+Commands affected: prd-new, prd-parse, epic-decompose, epic-sync, issue-start, issue-sync, and any other command that writes timestamps.
+
+---
+
 ## Getting Current Date and Time
 
 When any command requires the current date/time (for frontmatter, timestamps, or logs), you MUST obtain the REAL current date/time from the system rather than estimating or using placeholder values.
 
 ### How to Get Current DateTime
 
-Use the `date` command to get the current ISO 8601 formatted datetime:
-
+**Primary method** (use this):
 ```bash
-# Get current datetime in ISO 8601 format (works on Linux/Mac)
 date -u +"%Y-%m-%dT%H:%M:%SZ"
+```
 
-# Alternative for systems that support it
+Alternative methods (fallbacks only):
+```bash
+# For systems that support --iso-8601
 date --iso-8601=seconds
 
-# For Windows (if using PowerShell)
+# For Windows (PowerShell)
 Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
 ```
 
@@ -106,13 +119,3 @@ date +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
 python3 -c "from datetime import datetime; print(datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))" 2>/dev/null || \
 python -c "from datetime import datetime; print(datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))" 2>/dev/null
 ```
-
-## Rule Priority
-
-This rule has **HIGHEST PRIORITY** and must be followed by all commands that:
-- Create new files with frontmatter
-- Update existing files with frontmatter
-- Track timestamps or progress
-- Log any time-based information
-
-Commands affected: prd-new, prd-parse, epic-decompose, epic-sync, issue-start, issue-sync, and any other command that writes timestamps.

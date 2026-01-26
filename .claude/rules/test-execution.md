@@ -5,7 +5,10 @@ Standard patterns for running tests across all testing commands.
 ## Core Principles
 
 1. **Always use test-runner agent** from `.claude/agents/test-runner.md`
-2. **No mocking** - use real services for accurate results
+2. **Mocking by test type**:
+   - **Unit tests**: Mock external dependencies for isolation and speed
+   - **Integration tests**: Use real services where practical; mock only unstable externals
+   - **E2E tests**: No mocking - test the full system with real services
 3. **Verbose output** - capture everything for debugging
 4. **Check test structure first** - before assuming code bugs
 
@@ -16,10 +19,22 @@ Execute tests for: {target}
 
 Requirements:
 - Run with verbose output
-- No mock services
+- Apply mocking rules per test type (see Core Principles)
 - Capture full stack traces
 - Analyze test structure if failures occur
 ```
+
+## Template Variables
+
+These placeholders are filled by the test runner:
+- `{target}` - Test file, directory, or pattern to run
+- `{count}` - Number of tests executed
+- `{time}` - Execution time in seconds
+- `{test_name}` - Name of the failing test
+- `{file}` - File containing the test
+- `{line}` - Line number of failure
+- `{message}` - Error message
+- `{suggestion}` - Recommended fix
 
 ## Output Focus
 

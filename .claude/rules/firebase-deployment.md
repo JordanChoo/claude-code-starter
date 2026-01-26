@@ -1,6 +1,6 @@
-# Deployment Guide
+# Firebase Deployment Guide
 
-Instructions for deploying the Vue + Firebase application.
+Instructions for deploying the Vue + Firebase application to Firebase Hosting.
 
 ---
 
@@ -160,7 +160,7 @@ Before every deployment:
 
 1. [ ] **Run `./scripts/verify-env.sh`** - MANDATORY environment variable check
 2. [ ] Run `npm run build` - verify no TypeScript errors
-3. [ ] Cross-reference `data-models.md` for any model changes
+3. [ ] Cross-reference `firebase-data-models.md` for any model changes
 4. [ ] Test authentication flow locally
 5. [ ] Verify Google Secret Manager secrets are current
 6. [ ] Check Firestore security rules are deployed
@@ -254,7 +254,7 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
-          projectId: your-project-id
+          projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
 ```
 
 ## Troubleshooting

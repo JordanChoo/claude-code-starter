@@ -1,10 +1,10 @@
-# Data Models Reference
+# Firebase Data Models Reference
 
 **CRITICAL**: This file MUST be cross-referenced before ANY data model change. Update the changelog after every modification.
 
 ## Overview
 
-This document defines all data models used in the application. All Firestore collections, TypeScript interfaces, and data structures are documented here.
+This document defines all Firebase/Firestore data models used in the application. All Firestore collections, TypeScript interfaces, and data structures are documented here.
 
 ---
 
@@ -28,6 +28,8 @@ This mandatory review applies to ANY code change that:
 
 Before implementing any data-related code:
 
+> **Note**: This checklist is advisory. Consider adding pre-commit hooks for automated enforcement.
+
 1. [ ] **Read the relevant collection schema** in this document
 2. [ ] **Verify field names** match exactly (case-sensitive)
 3. [ ] **Check field types** and constraints
@@ -47,7 +49,7 @@ Before implementing any data-related code:
 ### How to Review
 
 ```
-1. Open this file: .claude/rules/data-models.md
+1. Open this file: .claude/rules/firebase-data-models.md
 2. Find the collection you're working with
 3. Review the interface definition
 4. Check the Field Definitions table
@@ -439,6 +441,11 @@ All data model changes MUST be logged here.
 ---
 
 ## Firestore Security Rules Reference
+
+> **Source of truth**: The `firestore.rules` file is the authoritative source.
+> This section documents the intended patterns. When modifying rules:
+> 1. Update `firestore.rules` first
+> 2. Update this documentation to match
 
 ```javascript
 rules_version = '2';

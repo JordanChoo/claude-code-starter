@@ -1,4 +1,4 @@
-# AST-Grep Integration Protocol for Cursor Agent
+# AST-Grep Usage Guide
 
 ## When to Use AST-Grep
 
@@ -43,52 +43,17 @@ ast-grep --pattern '$PATTERN' --lang $LANGUAGE $PATH
 
 ## Supported Languages
 
-**Complete list of ast-grep supported languages** (25 total):
+See ast-grep documentation for the current list of supported languages. Common languages include JavaScript/TypeScript, Python, Go, Rust, and many others.
 
-**System Programming:**
-- **C**: `c`
-- **C++**: `cpp`
-- **C#**: `csharp`
-- **Go**: `go`
-- **Rust**: `rust`
-
-**Web Development:**
-- **JavaScript**: `javascript` (aliases: `js`, `jsx`)
-- **TypeScript**: `typescript` (aliases: `ts`)
-- **TSX**: `tsx`
-- **HTML**: `html`
-- **CSS**: `css`
-- **PHP**: `php`
-
-**General Purpose:**
-- **Python**: `python`
-- **Java**: `java`
-- **Kotlin**: `kotlin`
-- **Ruby**: `ruby`
-- **Swift**: `swift`
-- **Scala**: `scala`
-- **Lua**: `lua`
-- **Elixir**: `elixir`
-- **Haskell**: `haskell`
-
-**Configuration & Data:**
-- **JSON**: `json`
-- **YAML**: `yaml`
-
-**Other:**
-- **Bash**: `bash`
-- **Nix**: `nix`
-- **Solidity**: `solidity`
-
-> **Note**: Language aliases (like `js` for `javascript`) and file extension mappings can be customized using the `languageGlobs` configuration.
+Run `ast-grep --help` to see available options and language support.
 
 ## Integration Workflow
 
 ### Before using ast-grep:
 1. **Check if ast-grep is installed:**
-   If not, skip and fall back to regex/semantic search.
+   If not installed, fall back to the Grep tool with regex patterns.
    ```sh
-   command -v ast-grep >/dev/null 2>&1 || echo "ast-grep not installed, skipping AST search"
+   command -v ast-grep >/dev/null 2>&1 || echo "ast-grep not installed, using Grep tool instead"
    ```
 2. **Identify** if the task involves structural code patterns or language-aware refactoring.
 3. **Determine** the appropriate language(s) to search.
@@ -108,11 +73,11 @@ When asked to "find all Ruby service objects that call `perform`":
 3. **Use** codebase semantic search for additional context if needed.
 4. **Make** informed edits based on structural understanding.
 
-### Combine ast-grep with Internal Tools
+### Combine ast-grep with Claude Code Tools
 
-- **codebase_search** for semantic context and documentation
-- **read_file** for examining specific files found by ast-grep
-- **edit_file** for making precise, context-aware code changes
+- **Grep** for text pattern search and semantic context
+- **Read** for examining specific files found by ast-grep
+- **Edit** for making precise, context-aware code changes
 
 ### Advanced Usage
 - **JSON output for programmatic processing:**
@@ -132,12 +97,12 @@ When asked to "find all Ruby service objects that call `perform`":
 
 ## Decision Matrix: When to Use Each Tool
 
-| Task Type                | Tool Choice          | Reason                        |
-|--------------------------|----------------------|-------------------------------|
-| Find text patterns       | grep_search          | Simple text matching          |
-| Find code structures     | ast-grep             | Syntax-aware search           |
-| Understand semantics     | codebase_search      | AI-powered context            |
-| Make edits               | edit_file            | Precise file editing          |
-| Structural refactoring   | ast-grep + edit_file | Structure + precision         |
+| Task Type                | Tool Choice      | Reason                        |
+|--------------------------|------------------|-------------------------------|
+| Find text patterns       | Grep             | Simple text matching          |
+| Find code structures     | ast-grep         | Syntax-aware search           |
+| Explore codebase         | Task (Explore)   | AI-powered context            |
+| Make edits               | Edit             | Precise file editing          |
+| Structural refactoring   | ast-grep + Edit  | Structure + precision         |
 
 **Always prefer ast-grep for code structure analysis over regex-based approaches, but only if it is installed and available.**

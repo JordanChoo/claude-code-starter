@@ -14,13 +14,6 @@ Git branches enable parallel development by allowing multiple developers to work
 4. **Code Review** - All epic changes go through PR review before merge
 5. **Clean History** - Main branch remains stable and deployable
 
-### Prohibited Actions
-
-- ❌ Working on epic tasks directly in main branch
-- ❌ Creating epic branches from branches other than main
-- ❌ Merging incomplete epics into main
-- ❌ Force pushing to main branch
-
 ### Verification Before Starting Work
 
 Before any epic work begins, verify:
@@ -70,15 +63,26 @@ git log --oneline -5
 
 Multiple agents can work in the same branch if they coordinate file access:
 ```bash
+# Before modifying shared files:
+# 1. Pull latest changes
+git pull origin epic/{name}
+
+# 2. Check git status for conflicts
+git status
+
+# 3. Communicate with team about which files you're modifying
+
 # Agent A works on API
 git add src/api/*
 git commit -m "Issue #1234: Add user endpoints"
 
-# Agent B works on UI (coordinate to avoid conflicts!)
-git pull origin epic/{name}  # Get latest changes
+# Agent B works on UI (after pulling A's changes)
+git pull origin epic/{name}  # Get latest changes first
 git add src/ui/*
 git commit -m "Issue #1235: Add dashboard component"
 ```
+
+See `agent-coordination.md` for detailed multi-agent coordination protocols.
 
 ## Merging Branches
 
@@ -134,13 +138,21 @@ git branch -v
 git log --oneline main..epic/{name}
 ```
 
-## Best Practices
+## Guidelines
 
-1. **One branch per epic** - Not per issue
-2. **Clean before create** - Always start from updated main
-3. **Commit frequently** - Small commits are easier to merge
-4. **Pull before push** - Get latest changes to avoid conflicts
-5. **Use descriptive branches** - `epic/feature-name` not `feature`
+**Do:**
+- One branch per epic (not per issue)
+- Always start from updated main
+- Commit frequently (small commits are easier to merge)
+- Pull before push (avoid conflicts)
+- Use descriptive branches: `epic/feature-name`
+
+**Don't:**
+- Work on epic tasks directly in main branch
+- Create epic branches from other branches (only from main)
+- Merge incomplete epics into main
+- Force push to main branch
+- Use `--force` flags unless explicitly required
 
 ## Common Issues
 

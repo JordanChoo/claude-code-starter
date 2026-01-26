@@ -428,7 +428,7 @@ echo "Synced: $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> .claude/epics/$ARGUMENTS/gith
 
 ### 7. Create Worktree
 
-Follow `/rules/worktree-operations.md` to create development worktree:
+Follow `/rules/branch-operations.md` to create development branch:
 
 ```bash
 # Ensure main is current

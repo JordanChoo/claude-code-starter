@@ -12,9 +12,10 @@ Extract frontmatter from any markdown file:
 ## Updating Frontmatter
 
 When updating existing files:
-1. Preserve all existing fields
-2. Only update specified fields
-3. Always update `updated` field with current datetime (see `/rules/datetime.md`)
+1. Preserve all user-defined custom fields
+2. Update standard fields per current schema (see Standard Fields section)
+3. Remove deprecated system fields that conflict with current schema
+4. Always update `updated` field with current datetime (see `datetime.md`)
 
 ## Standard Fields
 
@@ -28,9 +29,10 @@ updated: {ISO datetime}      # Update on any modification
 ```
 
 ### Status Values
-- PRDs: `backlog`, `in-progress`, `complete`
-- Epics: `backlog`, `in-progress`, `completed`  
-- Tasks: `open`, `in-progress`, `closed`
+All artifact types use consistent status values:
+- `backlog` - Not yet started
+- `in-progress` - Currently being worked on
+- `complete` - Finished
 
 ### Progress Tracking
 ```yaml
@@ -53,6 +55,6 @@ updated: {current_datetime}
 ## Important Notes
 
 - Never modify `created` field after initial creation
-- Always use real datetime from system (see `/rules/datetime.md`)
+- Always use real datetime from system (see `datetime.md`)
 - Validate frontmatter exists before trying to parse
 - Use consistent field names across all files

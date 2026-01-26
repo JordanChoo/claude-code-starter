@@ -62,3 +62,27 @@ For file-wide exceptions, add at the top:
 ```
 
 Avoid disabling rules project-wide unless absolutely necessary.
+
+## Extending Configuration
+
+To add custom rules or plugins, edit `eslint.config.js`:
+
+```javascript
+// eslint.config.js
+import customPlugin from 'eslint-plugin-custom'
+
+export default [
+  // ... existing config
+  {
+    plugins: {
+      custom: customPlugin
+    },
+    rules: {
+      'custom/my-rule': 'error',
+      // Add more rules
+    }
+  }
+]
+```
+
+For project-specific rule overrides, add a new config object at the end of the array.

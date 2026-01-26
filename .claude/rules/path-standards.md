@@ -69,36 +69,35 @@ config_path: "configs/"        # Configuration files directory
 ### Automatic Cleanup Rules
 ```bash
 # Path normalization function
+# Handles variable directory depths (not just 2 levels)
 normalize_paths() {
   local content="$1"
-  # Remove user-specific paths (generic patterns)
-  content=$(echo "$content" | sed "s|/Users/[^/]*/[^/]*/|../|g")
-  content=$(echo "$content" | sed "s|/home/[^/]*/[^/]*/|../|g")  
-  content=$(echo "$content" | sed "s|C:\\\\Users\\\\[^\\\\]*\\\\[^\\\\]*\\\\|..\\\\|g")
+  # Remove macOS user paths (any depth after username)
+  content=$(echo "$content" | sed -E "s|/Users/[^/]+/[^[:space:]]*|../|g")
+  # Remove Linux user paths (any depth after username)
+  content=$(echo "$content" | sed -E "s|/home/[^/]+/[^[:space:]]*|../|g")
+  # Remove Windows paths (any depth after username)
+  content=$(echo "$content" | sed -E "s|C:\\\\Users\\\\[^\\\\]+\\\\[^[:space:]]*|..\\\\|g")
   echo "$content"
 }
 ```
 
 ## PM Command Integration
 
-### issue-sync Command Updates
-- Automatically clean path formats before sync
-- Use relative path templates for generating comments
-- Record deliverables using standardized paths
+PM skill commands (`/pm:*`) automatically apply these path standards. See the PM skill documentation for command details.
 
-### epic-sync Command Updates
-- Standardize task file paths
-- Clean GitHub issue body paths
-- Use relative paths in mapping files
+Key integrations:
+- **issue-sync**: Cleans path formats before sync, uses relative path templates
+- **epic-sync**: Standardizes task file paths, cleans GitHub issue body paths
 
 ## Validation Checks
 
 ### Automated Check Script
 ```bash
-# Check for absolute path violations
+# Check for absolute path violations (uses grep for portability)
 check_absolute_paths() {
   echo "Checking for absolute path violations..."
-  rg -n "/Users/|/home/|C:\\\\\\\\" .claude/ || echo "✅ No absolute paths found"
+  grep -rn "/Users/\|/home/\|C:\\\\Users" .claude/ || echo "✅ No absolute paths found"
 }
 
 # Check GitHub sync content
@@ -124,7 +123,18 @@ check_sync_content() {
 ### Emergency Procedures
 If privacy information has been leaked:
 1. Immediately edit GitHub Issues/comments
-2. Clean Git history if necessary
+2. Clean Git history if necessary:
+   ```bash
+   # Using BFG Repo-Cleaner (recommended)
+   # Install: brew install bfg
+   bfg --replace-text passwords.txt repo.git
+
+   # Or using git filter-branch (slower)
+   git filter-branch --tree-filter 'find . -name "*.md" -exec sed -i "" "s|/Users/username/|../|g" {} \;' HEAD
+
+   # Force push after cleaning (coordinate with team!)
+   git push --force-with-lease
+   ```
 3. Update related documentation and templates
 4. Establish monitoring to prevent recurrence
 

@@ -70,21 +70,21 @@ Examples:
 
 ### Current Variables (Keep Updated)
 
-| Variable | Required | Description | Last Verified |
-|----------|----------|-------------|---------------|
-| `VITE_FIREBASE_API_KEY` | Yes | Firebase Web API Key | 2025-01-16 |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Yes | Firebase Auth Domain | 2025-01-16 |
-| `VITE_FIREBASE_PROJECT_ID` | Yes | Firebase Project ID | 2025-01-16 |
-| `VITE_FIREBASE_STORAGE_BUCKET` | Yes | Cloud Storage Bucket | 2025-01-16 |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Yes | FCM Sender ID | 2025-01-16 |
-| `VITE_FIREBASE_APP_ID` | Yes | Firebase App ID | 2025-01-16 |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_FIREBASE_API_KEY` | Yes | Firebase Web API Key |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Yes | Firebase Auth Domain |
+| `VITE_FIREBASE_PROJECT_ID` | Yes | Firebase Project ID |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Yes | Cloud Storage Bucket |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Yes | FCM Sender ID |
+| `VITE_FIREBASE_APP_ID` | Yes | Firebase App ID |
 
 ### Adding New Variables
 
 When adding a new environment variable:
 
 1. Add to `.env.example` with placeholder value
-2. Add to this table with `Last Verified` date
+2. Add to this table
 3. Create secret in Google Secret Manager
 4. Update CI/CD workflow to include the variable
 5. Update deployment scripts
@@ -183,6 +183,39 @@ chmod +x scripts/verify-env.sh
 ./scripts/verify-env.sh
 ```
 
+### PowerShell Alternative (Windows)
+
+```powershell
+# scripts/verify-env.ps1
+
+Write-Host "Verifying environment variables..." -ForegroundColor Cyan
+
+$requiredVars = @(
+    "VITE_FIREBASE_API_KEY",
+    "VITE_FIREBASE_AUTH_DOMAIN",
+    "VITE_FIREBASE_PROJECT_ID",
+    "VITE_FIREBASE_STORAGE_BUCKET",
+    "VITE_FIREBASE_MESSAGING_SENDER_ID",
+    "VITE_FIREBASE_APP_ID"
+)
+
+$missing = @()
+foreach ($var in $requiredVars) {
+    $secret = gcloud secrets describe $var 2>$null
+    if (-not $?) {
+        $missing += $var
+    }
+}
+
+if ($missing.Count -gt 0) {
+    Write-Host "Missing secrets in Google Secret Manager:" -ForegroundColor Red
+    $missing | ForEach-Object { Write-Host "   - $_" }
+    exit 1
+}
+
+Write-Host "All environment variables verified!" -ForegroundColor Green
+```
+
 ---
 
 ## CI/CD Integration
@@ -231,32 +264,7 @@ jobs:
 
       # Verify all required variables are set
       - name: Verify environment variables
-        run: |
-          REQUIRED_VARS=(
-            "VITE_FIREBASE_API_KEY"
-            "VITE_FIREBASE_AUTH_DOMAIN"
-            "VITE_FIREBASE_PROJECT_ID"
-            "VITE_FIREBASE_STORAGE_BUCKET"
-            "VITE_FIREBASE_MESSAGING_SENDER_ID"
-            "VITE_FIREBASE_APP_ID"
-          )
-
-          MISSING=()
-          for var in "${REQUIRED_VARS[@]}"; do
-            if [ -z "${!var}" ]; then
-              MISSING+=("$var")
-            fi
-          done
-
-          if [ ${#MISSING[@]} -ne 0 ]; then
-            echo "❌ Missing environment variables:"
-            for var in "${MISSING[@]}"; do
-              echo "   - $var"
-            done
-            exit 1
-          fi
-
-          echo "✅ All environment variables verified"
+        run: ./scripts/verify-env.sh
 
       - name: Install dependencies
         run: npm ci
@@ -327,8 +335,11 @@ echo "✅ Secrets updated"
 Enable audit logging for secret access:
 
 ```bash
+# Get PROJECT_ID from current gcloud config or Firebase console
+PROJECT_ID=$(gcloud config get-value project)
+
 # Enable Data Access audit logs for Secret Manager
-gcloud projects get-iam-policy PROJECT_ID --format=json > policy.json
+gcloud projects get-iam-policy $PROJECT_ID --format=json > policy.json
 
 # Add audit config (edit policy.json to include):
 # {
@@ -339,7 +350,7 @@ gcloud projects get-iam-policy PROJECT_ID --format=json > policy.json
 #   ]
 # }
 
-gcloud projects set-iam-policy PROJECT_ID policy.json
+gcloud projects set-iam-policy $PROJECT_ID policy.json
 ```
 
 ### View Secret Access History

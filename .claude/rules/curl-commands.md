@@ -2,6 +2,8 @@
 
 Reference guide for cURL commands used in this project.
 
+**When to use cURL**: Use cURL for debugging, testing, and one-off operations. Use the Firebase SDK in application code for better error handling and type safety.
+
 ## Firebase REST API
 
 ### Authentication
@@ -176,12 +178,19 @@ curl -I http://localhost:4173  # After npm run preview
 
 Replace these placeholders in commands:
 
-| Placeholder | Description | Source |
-|-------------|-------------|--------|
-| `YOUR_API_KEY` | Firebase Web API Key | Firebase Console > Project Settings |
-| `YOUR_PROJECT_ID` | Firebase Project ID | Firebase Console > Project Settings |
-| `YOUR_BUCKET` | Storage Bucket | Firebase Console > Storage |
-| `YOUR_ID_TOKEN` | User ID Token | From authentication response |
+| Placeholder | .env Variable | Description |
+|-------------|---------------|-------------|
+| `YOUR_API_KEY` | `VITE_FIREBASE_API_KEY` | Firebase Web API Key |
+| `YOUR_PROJECT_ID` | `VITE_FIREBASE_PROJECT_ID` | Firebase Project ID |
+| `YOUR_BUCKET` | `VITE_FIREBASE_STORAGE_BUCKET` | Cloud Storage Bucket |
+| `YOUR_ID_TOKEN` | (runtime) | User ID Token from auth response |
+
+Quick substitution:
+```bash
+# Load from .env and use in commands
+export $(grep -v '^#' .env | xargs)
+curl "...?key=$VITE_FIREBASE_API_KEY"
+```
 
 ## Common Options
 
@@ -232,4 +241,39 @@ curl -X POST \
   'https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=YOUR_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{ "idToken": "YOUR_ID_TOKEN" }'
+```
+
+### Example Error Responses
+
+**401 Unauthorized** (invalid/expired token):
+```json
+{
+  "error": {
+    "code": 401,
+    "message": "Request had invalid authentication credentials.",
+    "status": "UNAUTHENTICATED"
+  }
+}
+```
+
+**403 Forbidden** (security rules blocked):
+```json
+{
+  "error": {
+    "code": 403,
+    "message": "Missing or insufficient permissions.",
+    "status": "PERMISSION_DENIED"
+  }
+}
+```
+
+**404 Not Found** (document doesn't exist):
+```json
+{
+  "error": {
+    "code": 404,
+    "message": "Document not found.",
+    "status": "NOT_FOUND"
+  }
+}
 ```

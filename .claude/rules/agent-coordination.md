@@ -1,6 +1,10 @@
 # Agent Coordination
 
-Rules for multiple agents working in parallel within the same epic worktree.
+Rules for multiple agents working in parallel within the same epic branch.
+
+## Definition
+
+**Agent** = A Claude Code instance working on a specific task or work stream. Multiple agents may work on the same epic simultaneously, each assigned to different files or components.
 
 ## Parallel Execution Principles
 
@@ -33,11 +37,11 @@ Before modifying a shared file:
 # Check if file is being modified
 git status {file}
 
-# If modified by another agent, wait
+# If modified by another agent, report and continue with other work
 if [[ $(git status --porcelain {file}) ]]; then
-  echo "Waiting for {file} to be available..."
-  sleep 30
-  # Retry
+  echo "⚠️ File {file} has uncommitted changes from another agent"
+  echo "Moving to next task. Will return to this file later."
+  # Continue with other assigned files; revisit after other agent commits
 fi
 ```
 
@@ -66,13 +70,13 @@ git pull origin epic/{name}
 ```
 
 ### Through Progress Files
-Each stream maintains progress:
+Each stream maintains progress (see `naming-conventions.md` for path formats):
 ```markdown
 # .claude/epics/{epic}/updates/{issue}/stream-A.md
 ---
 stream: Database Layer
 agent: backend-specialist
-started: {datetime}
+started: {datetime}  # Use datetime.md format
 status: in_progress
 ---
 
@@ -122,11 +126,13 @@ Never attempt automatic merge resolution.
 
 ## Synchronization Points
 
-### Natural Sync Points
-- After each commit
-- Before starting new file
-- When switching work streams
-- Every 30 minutes of work
+### Event-Based Sync Triggers
+Sync at these natural work boundaries (no timers needed):
+- **After each commit** - Changes are now visible to others
+- **Before modifying a new file** - Ensures you have latest version
+- **When switching tasks** - Context switch is a natural sync boundary
+- **When blocked/uncertain** - Check if another agent resolved the blocker
+- **Before marking task complete** - Final sync ensures no conflicts
 
 ### Explicit Sync
 ```bash

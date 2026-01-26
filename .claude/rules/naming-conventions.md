@@ -24,7 +24,7 @@ Used for PRDs, Epics, and derived artifacts.
 | Epic file | `.claude/epics/{feature-name}/epic.md` | `.claude/epics/user-auth/epic.md` |
 | Task (unsynced) | `.claude/epics/{feature-name}/{task-name}.md` | `.claude/epics/user-auth/setup-database.md` |
 | Task (synced) | `.claude/epics/{feature-name}/{issue-number}-{task-name}.md` | `.claude/epics/user-auth/42-setup-database.md` |
-| Analysis | `.claude/epics/{feature-name}/{issue-number}-analysis.md` | `.claude/epics/user-auth/42-analysis.md` |
+| Analysis | `.claude/epics/{feature-name}/{issue-number}-{task-name}-analysis.md` | `.claude/epics/user-auth/42-setup-database-analysis.md` |
 | GitHub mapping | `.claude/epics/{feature-name}/github-mapping.md` | `.claude/epics/user-auth/github-mapping.md` |
 
 ## Task File Naming
@@ -78,6 +78,8 @@ Tasks are renamed to include the GitHub issue number as a prefix:
 - `Issue #42: Add user authentication schema`
 - `Issue #43: Create login API endpoint`
 - `Issue #44: Fix password validation bug`
+
+See `agent-coordination.md` for detailed commit workflow when multiple agents are working.
 
 ## Branch Naming
 

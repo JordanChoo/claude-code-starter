@@ -8,8 +8,11 @@ Standard patterns for GitHub CLI operations across all commands.
 
 ```bash
 # Check if remote origin is the CCPM template repository
+# Handles: HTTPS, SSH, with/without .git suffix, trailing slashes
 remote_url=$(git remote get-url origin 2>/dev/null || echo "")
-if [[ "$remote_url" == *"automazeio/ccpm"* ]] || [[ "$remote_url" == *"automazeio/ccpm.git"* ]]; then
+# Normalize: remove trailing slashes, .git suffix, convert to lowercase for comparison
+normalized_url=$(echo "$remote_url" | tr '[:upper:]' '[:lower:]' | sed 's|/$||' | sed 's|\.git$||')
+if [[ "$normalized_url" == *"automazeio/ccpm" ]]; then
   echo "❌ ERROR: You're trying to sync with the CCPM template repository!"
   echo ""
   echo "This repository (automazeio/ccpm) is a template for others to use."

@@ -80,3 +80,4 @@ grep -n "^---$" input.md | head -2 | tail -1 | cut -d: -f1 | xargs -I {} tail -n
 - Keep original files intact
 - Use temporary files for cleaned content
 - Some files may not have frontmatter - the command handles this gracefully
+- **Warning**: Malformed frontmatter (single `---` without closing) may cause unexpected output; validate files have proper frontmatter structure before processing

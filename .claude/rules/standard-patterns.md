@@ -1,6 +1,6 @@
 # Standard Patterns for Commands
 
-This file defines common patterns that all commands should follow to maintain consistency and simplicity.
+This file defines common patterns that all PM skill commands (`/pm:*`) should follow to maintain consistency and simplicity. These patterns apply to slash commands, not bash commands.
 
 ## Core Principles
 
@@ -27,7 +27,7 @@ Only check what's absolutely necessary:
 ```markdown
 Get current datetime: `date -u +"%Y-%m-%dT%H:%M:%SZ"`
 ```
-Don't repeat full instructions - just reference `/rules/datetime.md` once.
+Don't repeat full instructions - just reference `datetime.md` once.
 
 ### Error Messages
 Keep them short and actionable:
@@ -146,29 +146,39 @@ Failed: auth.test.js (syntax error - line 42)
 
 ## Quick Reference
 
-### Essential Tools Only
-- Read/List operations: `Read, LS`
-- File creation: `Read, Write, LS`
-- GitHub operations: Add `Bash`
-- Complex analysis: Add `Task` (sparingly)
+### Tools
+See Claude Code tool documentation for available tools. Common tools include Read, Write, Edit, Glob, Grep, and Bash.
 
 ### Status Indicators
-- ✅ Success (use sparingly)
-- ❌ Error (always with solution)
-- ⚠️ Warning (only if action needed)
-- No emoji for normal output
+Use status emojis only for final outcomes, not for intermediate steps or decoration:
+- ✅ Success - Use only for final success message
+- ❌ Error - Always include solution
+- ⚠️ Warning - Only if action needed
+- No emoji for progress steps or normal output
 
 ### Exit Strategies
 - Success: Brief confirmation
 - Failure: Clear error + exact fix
 - Partial: Show what worked, what didn't
 
-## Remember
+## When to Validate vs Trust
 
-**Simple is not simplistic** - We still handle errors properly, we just don't try to prevent every possible edge case. We trust that:
-- The file system usually works
-- GitHub CLI is usually authenticated  
-- Git repositories are usually valid
-- Users know what they're doing
+### Validate (check before proceeding)
+- File exists before reading specific content from it
+- Directory exists before creating files in it
+- Required parameters are provided
 
-Focus on the happy path, fail gracefully when things go wrong.
+### Trust (don't pre-check)
+- GitHub CLI authentication (handle on failure)
+- Git repository validity (let git commands fail)
+- File system permissions (handle on failure)
+- Network connectivity (let requests fail)
+
+**Example - Good balance:**
+```bash
+# Check: File must exist to proceed
+[ -f .claude/epics/feature/epic.md ] || echo "❌ Epic not found"
+
+# Trust: gh is authenticated (handle failure)
+gh issue create ... || echo "❌ GitHub failed. Run: gh auth login"
+```

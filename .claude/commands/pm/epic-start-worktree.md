@@ -31,7 +31,7 @@ Launch parallel agents to work on epic tasks in a shared worktree.
 
 ### 1. Create or Enter Worktree
 
-Follow `/rules/worktree-operations.md`:
+Follow `/rules/branch-operations.md`:
 
 ```bash
 # If worktree doesn't exist, create it
@@ -214,7 +214,7 @@ Or: Check existing worktrees with: git worktree list
 
 ## Important Notes
 
-- Follow `/rules/worktree-operations.md` for git operations
+- Follow `/rules/branch-operations.md` for git operations
 - Follow `/rules/agent-coordination.md` for parallel work
 - Agents work in the SAME worktree (not separate ones)
 - Maximum parallel agents should be reasonable (e.g., 5-10)
