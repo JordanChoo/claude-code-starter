@@ -192,6 +192,31 @@ src/
 
 You don't need to memorize this — just ask Claude Code where things go.
 
+## Opinionated Rules
+
+This template includes pre-configured rules (in `.claude/rules/`) that guide how Claude Code works. These aren't restrictions — they're guardrails that ensure consistency and prevent common mistakes.
+
+**Why opinionated?** Without rules, Claude Code might name files differently each time, forget conventions, or make inconsistent choices. These rules encode best practices so you get predictable, professional results.
+
+### Key Rules
+
+| Rule | What It Does | Why It Matters |
+|------|--------------|----------------|
+| **Data Models** | Claude Code references `.claude/rules/firebase-data-models.md` before any database changes | Prevents schema drift and ensures type safety |
+| **Environment Variables** | Secrets go in Google Secret Manager, not code | Keeps credentials secure and deployment-ready |
+| **Branch Operations** | Every epic gets its own branch from main | Isolates work, enables easy rollback |
+| **Naming Conventions** | Files, commits, and branches follow consistent patterns | Makes the codebase navigable and predictable |
+| **Agent Coordination** | When multiple agents work in parallel, they follow file-level coordination rules | Prevents conflicts and merge issues |
+
+### You Don't Need to Memorize These
+
+Claude Code reads these rules automatically. They're documented so you can:
+- Understand why Claude Code makes certain choices
+- Customize them if your project has different needs
+- Trust that conventions are being followed consistently
+
+To view all rules: `ls .claude/rules/`
+
 ## Testing
 
 Linting runs automatically on every commit via a pre-commit hook — you don't need to run it manually.
