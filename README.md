@@ -1,6 +1,6 @@
 # Vue Firebase Starter (Claude Code Edition)
 
-A boilerplate template designed for **Claude Code-first development** — where you describe what you want built and AI implements it.
+A boilerplate template designed for **Claude Code-first development** powered by **[Claude Code PM](https://github.com/automazeio/ccpm)** — a spec-driven workflow where you describe what you want, and AI implements it with full traceability.
 
 ## Philosophy
 
@@ -13,16 +13,42 @@ This template is built for people who work **with** Claude Code rather than writ
 
 You don't need to know TypeScript, Vue, or Firebase deeply — Claude Code handles the implementation details.
 
+## Why Use the PM System?
+
+Without structure, AI-assisted development becomes chaotic — context gets lost between sessions, changes are hard to track, and you lose visibility into what's been done.
+
+The PM system solves this:
+
+- **Context survives sessions** — PRDs and tasks persist locally, so Claude Code picks up where it left off
+- **Work is traceable** — Every code change links back to a GitHub issue and PRD requirement
+- **Progress is visible** — Track what's done, what's in progress, and what's blocked
+- **Parallel work is possible** — Multiple tasks can be worked on independently
+
+**Rule of thumb:** If it takes more than 5 minutes, use the PM system.
+
+> **Avoid this:** "Hey Claude, add user authentication to my app"
+>
+> **Do this instead:** Create a PRD describing the auth requirements, then let the PM system break it into trackable tasks.
+
+## How It Works
+
+```
+PRD (what you want) → Epic (implementation plan) → Tasks (individual work items) → GitHub Issues (tracking) → Code
+```
+
+Each step creates artifacts that persist, so nothing gets lost.
+
 ## What's Included
 
-This template comes pre-configured with:
+**Core Workflow:**
+- **[Claude Code PM](https://github.com/automazeio/ccpm)** — Spec-driven development with GitHub issue tracking
 
+**Pre-configured Stack:**
 - **Authentication** — Email/password and Google sign-in ready to use
 - **Firebase Integration** — Firestore database, Cloud Storage, and Auth pre-wired
 - **Routing** — Protected routes that redirect unauthenticated users
 - **State Management** — Pinia store for auth state
 - **Styling** — Tailwind CSS configured and ready
-- **PM System** — [Claude Code PM](https://github.com/automazeio/ccpm) commands for spec-driven development
 - **ESLint + Husky** — Linting and pre-commit hooks configured
 
 ## Getting Started
