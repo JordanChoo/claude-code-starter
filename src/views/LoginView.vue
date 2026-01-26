@@ -12,6 +12,18 @@ const email = ref('')
 const password = ref('')
 const isSubmitting = ref(false)
 
+/**
+ * Validates and sanitizes redirect URLs to prevent open redirect attacks.
+ * Only allows internal paths starting with '/'.
+ */
+function getSafeRedirect(): string {
+  const redirect = route.query.redirect
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    return redirect
+  }
+  return '/'
+}
+
 async function handleSubmit() {
   isSubmitting.value = true
   try {
@@ -20,8 +32,7 @@ async function handleSubmit() {
     } else {
       await authStore.register(email.value, password.value)
     }
-    const redirect = route.query.redirect as string || '/'
-    router.push(redirect)
+    router.push(getSafeRedirect())
   } catch {
     // Error is handled in the store
   } finally {
@@ -33,8 +44,7 @@ async function handleGoogleLogin() {
   isSubmitting.value = true
   try {
     await authStore.loginWithGoogle()
-    const redirect = route.query.redirect as string || '/'
-    router.push(redirect)
+    router.push(getSafeRedirect())
   } catch {
     // Error is handled in the store
   } finally {

@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function validTimestamp(field) {
+      return request.resource.data[field] == request.time;
+    }
+
+    function validEmail(email) {
+      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    function validDisplayName(name) {
+      return name == null || (name.size() <= 100 && name.trim() == name);
+    }
+
+    function validPhotoURL(url) {
+      return url == null || (url.matches('^https://.*') && url.size() <= 2048);
+    }
+
+    // Users collection rules
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+        && validEmail(request.resource.data.email)
+        && validDisplayName(request.resource.data.displayName)
+        && validPhotoURL(request.resource.data.photoURL)
+        && validTimestamp('createdAt')
+        && validTimestamp('updatedAt');
+
+      allow update: if isOwner(userId)
+        && validDisplayName(request.resource.data.displayName)
+        && validPhotoURL(request.resource.data.photoURL)
+        && validTimestamp('updatedAt')
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.email == resource.data.email;
+
+      allow delete: if isOwner(userId);
+    }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
