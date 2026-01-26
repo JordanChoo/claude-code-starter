@@ -42,7 +42,7 @@ The branch will be created and pushed to origin with upstream tracking.
 ### Agent Commits
 - Agents commit directly to the branch
 - Use small, focused commits
-- Commit message format: `Issue #{number}: {description}`
+- See [naming-conventions.md](naming-conventions.md) for commit message format
 - Example: `Issue #1234: Add user authentication schema`
 
 ### File Operations

@@ -23,12 +23,6 @@ Only check what's absolutely necessary:
    - Only check on actual failure
 ```
 
-### DateTime Handling
-```markdown
-Get current datetime: `date -u +"%Y-%m-%dT%H:%M:%SZ"`
-```
-Don't repeat full instructions - just reference `datetime.md` once.
-
 ### Error Messages
 Keep them short and actionable:
 ```markdown
@@ -74,20 +68,6 @@ if [ -f {file} ]; then
 else
   # Use sensible default
 fi
-```
-
-## GitHub Operations
-
-### Trust gh CLI
-```markdown
-# Don't pre-check auth, just try the operation
-gh {command} || echo "❌ GitHub CLI failed. Run: gh auth login"
-```
-
-### Simple Issue Operations
-```markdown
-# Get what you need in one call
-gh issue view {number} --json state,title,body
 ```
 
 ## Common Patterns to Avoid

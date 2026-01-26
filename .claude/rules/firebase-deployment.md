@@ -33,38 +33,11 @@ See `.claude/rules/environment-variables.md` for complete environment variable m
 
 ## Environment Setup
 
-### Local Development
-
-```bash
-# Copy environment template
-cp .env.example .env
-
-# Add Firebase credentials to .env
-VITE_FIREBASE_API_KEY=your-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-VITE_FIREBASE_APP_ID=your-app-id
-```
-
-### Production (Google Secret Manager)
-
-Production environment variables are stored in Google Secret Manager and pulled during deployment.
-
-```bash
-# View current production secrets
-gcloud secrets list | grep VITE_
-
-# Update a secret
-echo -n "new-value" | gcloud secrets versions add SECRET_NAME --data-file=-
-
-# Bulk update from local .env
-./scripts/update-secrets.sh --dry-run  # Preview changes
-./scripts/update-secrets.sh            # Apply changes
-```
-
-See `.claude/rules/environment-variables.md` for detailed setup instructions.
+See [environment-variables.md](environment-variables.md) for complete environment variable management, including:
+- Required variables and their sources
+- Local development setup (`.env` file)
+- Google Secret Manager setup for production
+- Verification scripts and update procedures
 
 ## Build Process
 

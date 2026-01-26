@@ -2,9 +2,9 @@
 
 Rules for multiple agents working in parallel within the same epic branch.
 
-## Definition
+## Overview
 
-**Agent** = A Claude Code instance working on a specific task or work stream. Multiple agents may work on the same epic simultaneously, each assigned to different files or components.
+Agents (see [CLAUDE.md glossary](../../CLAUDE.md#glossary)) may work on the same epic simultaneously, each assigned to different files or components.
 
 ## Parallel Execution Principles
 

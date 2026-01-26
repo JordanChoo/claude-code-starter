@@ -16,11 +16,7 @@ Always run tests before committing:
 
 Follow existing patterns in the codebase.
 
-ESLint is configured with TypeScript and Vue support:
-- `npm run lint` - check for errors
-- `npm run lint:fix` - auto-fix issues
-
-A pre-commit hook runs lint-staged automatically.
+See [.claude/rules/linting.md](.claude/rules/linting.md) for ESLint configuration and commands.
 
 ## Glossary
 
