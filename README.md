@@ -1,6 +1,6 @@
 # Vue Firebase Starter (Claude Code Edition)
 
-A boilerplate template designed for **Claude Code-first development** powered by **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** — a lightweight, spec-driven workflow where you describe what you want, and AI implements it with full traceability.
+A boilerplate template designed for **Claude Code-first development** powered by **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** and **[Beads](https://github.com/steveyegge/beads/)** — a spec-driven workflow with git-backed task tracking where you describe what you want, and AI implements it with full traceability.
 
 ## Philosophy
 
@@ -17,12 +17,13 @@ You don't need to know TypeScript, Vue, or Firebase deeply — Claude Code handl
 
 Without structure, AI-assisted development becomes chaotic — context gets lost between sessions, changes are hard to track, and you lose visibility into what's been done.
 
-OpenSpec solves this:
+OpenSpec + Beads solve this:
 
-- **Context survives sessions** — Specs and changes persist locally, so Claude Code picks up where it left off
-- **Work is traceable** — Every code change links back to a spec and change artifact
-- **Progress is visible** — Track what's done, what's in progress, and what's left
+- **Context survives sessions** — Specs, changes, and tasks persist locally in git, so Claude Code picks up where it left off
+- **Work is traceable** — Every code change links back to a spec and a tracked task
+- **Progress is visible** — `bd ready` shows what's unblocked, what's in progress, and what's left
 - **Lightweight** — Minimal overhead, no heavy PM infrastructure
+- **Agent-native** — Beads uses hash-based IDs and JSON storage designed for AI agents working in parallel
 
 **Rule of thumb:** If it takes more than 5 minutes, use OpenSpec.
 
@@ -33,15 +34,16 @@ OpenSpec solves this:
 ## How It Works
 
 ```
-/opsx:new (describe what you want) → /opsx:ff (generate artifacts) → /opsx:apply (implement) → /opsx:archive (complete)
+/opsx:new (describe what you want) → /opsx:ff (generate artifacts) → bd create (track tasks) → /opsx:apply (implement) → /opsx:archive (complete)
 ```
 
-Each step creates artifacts that persist, so nothing gets lost.
+**OpenSpec** handles the *what* (specs, changes, artifacts). **Beads** handles the *tracking* (tasks, dependencies, progress). Both persist in git, so nothing gets lost.
 
 ## What's Included
 
 **Core Workflow:**
 - **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** — Spec-driven development with structured change tracking
+- **[Beads](https://github.com/steveyegge/beads/)** — Git-backed task tracking designed for AI agents
 
 **Pre-configured Stack:**
 - **Authentication** — Email/password and Google sign-in ready to use
@@ -58,6 +60,7 @@ Each step creates artifacts that persist, so nothing gets lost.
 - Node.js 18+ ([download](https://nodejs.org))
 - A Firebase project ([create one](https://console.firebase.google.com))
 - Claude Code CLI installed
+- Beads CLI: `npm install -g @beads/bd` ([docs](https://github.com/steveyegge/beads/))
 
 ### Setup
 
@@ -95,11 +98,12 @@ Follow the prompts to authenticate.
 
 ### Starting Development
 
-All work flows through OpenSpec. This keeps your work organized and helps Claude Code understand context across sessions.
+All work flows through OpenSpec and Beads. This keeps your work organized and helps Claude Code understand context across sessions.
 
-**1. Initialize OpenSpec (first time only):**
+**1. Initialize (first time only):**
 ```bash
 openspec init --tools claude
+bd init
 ```
 
 **2. Start a new change:**
@@ -112,20 +116,31 @@ Describe what you want to build in plain language — features, user flows, requ
 ```bash
 /opsx:ff
 ```
-Claude Code analyzes your change and creates structured tasks.
+Claude Code analyzes your change and creates structured artifacts.
 
-**4. Implement the tasks:**
+**4. Create tasks to track work:**
 ```bash
-/opsx:apply
+bd create "Implement user auth API" -p 0
+bd create "Add login UI component" -p 1
+bd dep add <child-id> <parent-id>    # set dependencies
 ```
-Claude Code picks up tasks and implements them.
+Beads tracks each task in `.beads/`, versioned alongside your code.
 
-**5. Archive when complete:**
+**5. Implement the tasks:**
+```bash
+bd update <id> --claim               # claim a task
+/opsx:apply                          # implement via OpenSpec
+bd update <id> --resolve             # mark complete
+```
+
+**6. Archive when complete:**
 ```bash
 /opsx:archive
 ```
 
 ### Quick Commands Reference
+
+**OpenSpec (specs & changes):**
 
 | Command | Purpose |
 |---------|---------|
@@ -136,6 +151,17 @@ Claude Code picks up tasks and implements them.
 | `/opsx:verify` | Verify implementation matches artifacts |
 | `/opsx:archive` | Archive a completed change |
 | `/opsx:explore` | Think through ideas before starting |
+
+**Beads (task tracking):**
+
+| Command | Purpose |
+|---------|---------|
+| `bd ready` | Show unblocked tasks ready for work |
+| `bd create "Title" -p 0` | Create a task (0 = highest priority) |
+| `bd update <id> --claim` | Claim a task and mark in-progress |
+| `bd update <id> --resolve` | Mark a task as complete |
+| `bd dep add <child> <parent>` | Set task dependencies |
+| `bd show <id>` | View task details and history |
 
 ### Ad-Hoc Requests
 
@@ -148,7 +174,7 @@ For quick changes outside OpenSpec, just describe what you want:
 | Writing Firestore queries | "Create a function to get all posts by the current user, sorted by date" |
 | Handling auth | "Add Google login to the login page" |
 
-Use ad-hoc requests for small tweaks. Use OpenSpec for features.
+Use ad-hoc requests for small tweaks. Use OpenSpec + Beads for features.
 
 ## Extending with WHobson Agents
 
@@ -198,7 +224,7 @@ Plugins enhance your existing workflow without changing it:
 2. **Describe the user experience** — "When the user clicks Save, disable the button and show 'Saving...'"
 3. **Ask for explanations** — "Explain what this component does" helps you understand and review
 4. **Iterate incrementally** — Build features in small steps, reviewing each one
-5. **Use OpenSpec** — For anything beyond a quick fix, start a new change first
+5. **Use OpenSpec + Beads** — For anything beyond a quick fix, start a new change and track tasks
 
 ## Project Structure
 

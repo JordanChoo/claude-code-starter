@@ -34,3 +34,13 @@ This project uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for structu
 - `/opsx:archive` — Archive a completed change
 
 See `openspec/` directory for specs and changes.
+
+## Task Tracking
+
+This project uses [Beads](https://github.com/steveyegge/beads/) (`bd`) for git-backed task tracking. Tasks live in `.beads/` and are versioned alongside code. Key commands:
+- `bd ready` — Show unblocked tasks ready for work
+- `bd create "Title" -p 0` — Create a new task (priority 0 = highest)
+- `bd update <id> --claim` — Claim a task and mark it in-progress
+- `bd show <id>` — View task details and history
+
+Use Beads to track implementation tasks during `/opsx:apply`.
