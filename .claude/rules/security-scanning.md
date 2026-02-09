@@ -15,7 +15,7 @@ Security scanning is REQUIRED before:
 | Action | Scan Required |
 |--------|---------------|
 | `git commit` | Yes |
-| `/pm:issue-close` | Yes |
+| Closing tasks | Yes |
 | Deploying to any environment | Yes |
 | Creating a PR | Yes |
 
@@ -98,7 +98,7 @@ EOF
 
 ---
 
-## Integration with PM Workflow
+## Integration with Workflow
 
 ### Before Closing Tasks
 
@@ -106,8 +106,7 @@ EOF
 # 1. Run security scan
 /security-scanning:security-audit
 
-# 2. If clean, close the task
-/pm:issue-close [number]
+# 2. If clean, close/archive the task
 ```
 
 ### Before Deployment
@@ -143,10 +142,7 @@ If you must commit without scanning (critical hotfix):
    SECURITY-BYPASS: [reason]
    ```
 
-2. **Create follow-up task** for security review:
-   ```bash
-   /pm:issue-start "Security review for [commit hash]"
-   ```
+2. **Create follow-up task** for security review
 
 3. **Run scan immediately after** the emergency is resolved
 

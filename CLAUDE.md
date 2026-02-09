@@ -25,13 +25,12 @@ Follow existing patterns in the codebase.
 
 See [.claude/rules/linting.md](.claude/rules/linting.md) for ESLint configuration and commands.
 
-## Glossary
+## Spec-Driven Workflow
 
-| Term | Definition |
-|------|------------|
-| **Agent** | A Claude Code instance working on a specific task or work stream |
-| **Epic** | A large feature or body of work broken down into multiple tasks |
-| **PRD** | Product Requirements Document - defines what needs to be built |
-| **Task** | A single unit of work within an epic, typically tracked as a GitHub issue |
-| **Frontmatter** | YAML metadata at the top of markdown files between `---` markers |
-| **Work Stream** | A subset of files/components assigned to an agent within an epic |
+This project uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for structured, spec-driven development. Key commands:
+- `/opsx:new` — Start a new change
+- `/opsx:ff` — Fast-forward through artifact creation
+- `/opsx:apply` — Implement tasks from a change
+- `/opsx:archive` — Archive a completed change
+
+See `openspec/` directory for specs and changes.

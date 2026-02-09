@@ -3,10 +3,8 @@
     "allow": [
       "Bash(bash .claude/scripts/test-and-log.sh:*)",
       "Bash(.claude/scripts/test-and-log.sh:*)",
-      "Bash(bash .claude/scripts/pm/*)",
-      "Bash(.claude/scripts/pm/*)",
+      "Bash(openspec:*)",
 
-      "Bash(cat:*)",
       "Bash(cat:*)",
       "Bash(composer:*)",
       "Bash(fi)",
