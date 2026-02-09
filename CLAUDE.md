@@ -19,6 +19,15 @@ Always run security scan before committing:
 
 See [.claude/rules/security-scanning.md](.claude/rules/security-scanning.md) for full security workflow.
 
+## Destructive Command Guard
+
+[DCG](https://github.com/Dicklesworthstone/destructive_command_guard) is required as a Claude Code hook. It blocks destructive commands (`git reset --hard`, `rm -rf`, `git push --force`, etc.) before they execute. If a command is blocked:
+1. Read the reason — use `dcg explain "<command>"` for details
+2. Find a safer alternative
+3. Only allowlist with justification in `~/.config/dcg/config.toml`
+
+See [.claude/rules/destructive-command-guard.md](.claude/rules/destructive-command-guard.md) for full configuration.
+
 ## Code Style
 
 Follow existing patterns in the codebase.

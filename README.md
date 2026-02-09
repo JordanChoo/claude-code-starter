@@ -45,6 +45,9 @@ OpenSpec + Beads solve this:
 - **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** — Spec-driven development with structured change tracking
 - **[Beads](https://github.com/steveyegge/beads/)** — Git-backed task tracking designed for AI agents
 
+**Safety:**
+- **[DCG](https://github.com/Dicklesworthstone/destructive_command_guard)** — Destructive Command Guard hook that blocks dangerous commands before execution
+
 **Pre-configured Stack:**
 - **Authentication** — Email/password and Google sign-in ready to use
 - **Firebase Integration** — Firestore database, Cloud Storage, and Auth pre-wired
@@ -61,6 +64,7 @@ OpenSpec + Beads solve this:
 - A Firebase project ([create one](https://console.firebase.google.com))
 - Claude Code CLI installed
 - Beads CLI: `npm install -g @beads/bd` ([docs](https://github.com/steveyegge/beads/))
+- DCG (Destructive Command Guard): see [install instructions](#destructive-command-guard-dcg) below
 
 ### Setup
 
@@ -218,6 +222,36 @@ Plugins enhance your existing workflow without changing it:
 4. **Run security scans** before archiving with `/security-scanning:security-audit`
 5. **Use orchestration** for complex features with `/full-stack-orchestration:full-stack-feature "feature name"`
 
+## Destructive Command Guard (DCG)
+
+[DCG](https://github.com/Dicklesworthstone/destructive_command_guard) is a **required** safety hook that blocks destructive commands before Claude Code can execute them. It protects against accidental `git reset --hard`, `rm -rf`, `git push --force`, and 49+ other dangerous patterns.
+
+### Install DCG
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/destructive_command_guard/master/install.sh?$(date +%s)" | bash -s -- --easy-mode
+```
+
+DCG runs automatically as a Claude Code pre-execution hook — no additional configuration needed.
+
+### What It Blocks
+
+| Category | Examples |
+|----------|----------|
+| **Git** | `git reset --hard`, `git push --force`, `git clean -f`, `git branch -D` |
+| **Filesystem** | `rm -rf` on non-temp paths, inline destructive scripts |
+| **Databases** | `DROP TABLE`, `TRUNCATE`, destructive SQL (via packs) |
+| **Cloud/Infra** | AWS/GCP/Azure destructive ops, `terraform destroy` (via packs) |
+
+### If a Command Is Blocked
+
+```bash
+# Understand why it was blocked
+dcg explain "git reset --hard"
+```
+
+DCG will explain the rule and suggest safer alternatives. See [.claude/rules/destructive-command-guard.md](.claude/rules/destructive-command-guard.md) for full configuration.
+
 ## Tips for Working with Claude Code
 
 1. **Be specific about behavior** — "Show a loading spinner while saving" is better than "add loading state"
@@ -256,6 +290,7 @@ This template includes pre-configured rules (in `.claude/rules/`) that guide how
 | **Data Models** | Claude Code references `.claude/rules/firebase-data-models.md` before any database changes | Prevents schema drift and ensures type safety |
 | **Environment Variables** | Secrets go in Google Secret Manager, not code | Keeps credentials secure and deployment-ready |
 | **Security Scanning** | Mandatory security scans before commits and deployments | Catches vulnerabilities early |
+| **Destructive Command Guard** | DCG hook blocks dangerous commands before execution | Prevents accidental data loss |
 | **Linting** | ESLint with TypeScript and Vue support | Consistent code quality |
 
 ### You Don't Need to Memorize These

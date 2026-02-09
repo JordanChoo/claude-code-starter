@@ -5,6 +5,7 @@
       "Bash(.claude/scripts/test-and-log.sh:*)",
       "Bash(openspec:*)",
       "Bash(bd:*)",
+      "Bash(dcg:*)",
 
       "Bash(cat:*)",
       "Bash(composer:*)",
