@@ -1,17 +1,17 @@
-# Vue Firebase Starter (Gemini CLI Edition)
+# Vue Firebase Starter (Claude Code Edition)
 
-A boilerplate template designed for **[Gemini CLI-first development](./CLAUDE.md)** powered by **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** and **[Beads](https://github.com/steveyegge/beads/)** — a spec-driven workflow with git-backed task tracking where you describe what you want, and AI implements it with full traceability.
+A boilerplate template designed for **[Claude Code-first development](./CLAUDE.md)** powered by **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** and **[Beads](https://github.com/steveyegge/beads/)** — a spec-driven workflow with git-backed task tracking where you describe what you want, and AI implements it with full traceability.
 
 ## Philosophy
 
-This template is built for people who work **with** Gemini CLI rather than writing code manually. Your workflow is:
+This template is built for people who work **with** Claude Code rather than writing code manually. Your workflow is:
 
 1. **Describe** what you want ("Add a user profile page with avatar upload")
-2. **Review** what Gemini CLI generates
+2. **Review** what Claude Code generates
 3. **Guide** with feedback ("Make the avatar circular" or "Add error handling")
 4. **Repeat** until complete
 
-You don't need to know TypeScript, Vue, or Firebase deeply — Gemini CLI handles the implementation details.
+You don't need to know TypeScript, Vue, or Firebase deeply — Claude Code handles the implementation details.
 
 ## Why Use OpenSpec?
 
@@ -19,7 +19,7 @@ Without structure, AI-assisted development becomes chaotic — context gets lost
 
 OpenSpec + Beads solve this:
 
-- **Context survives sessions** — Specs, changes, and tasks persist locally in git, so Gemini CLI picks up where it left off
+- **Context survives sessions** — Specs, changes, and tasks persist locally in git, so Claude Code picks up where it left off
 - **Work is traceable** — Every code change links back to a spec and a tracked task
 - **Progress is visible** — `bd ready` shows what's unblocked, what's in progress, and what's left
 - **Lightweight** — Minimal overhead, no heavy PM infrastructure
@@ -62,14 +62,14 @@ OpenSpec + Beads solve this:
 
 - Node.js 18+ ([download](https://nodejs.org))
 - A Firebase project ([create one](https://console.firebase.google.com))
-- Gemini CLI CLI installed
+- Claude Code: `npm install -g @anthropic-ai/claude-code` ([docs](https://docs.anthropic.com/en/docs/claude-code/overview))
 - Beads CLI: `npm install -g @beads/bd` ([docs](https://github.com/steveyegge/beads/))
 (Note: If `npm install` fails, ensure you have access to the `@beads` npm registry or consult Beads documentation for alternative installation methods.)
 - DCG (Destructive Command Guard): see [install instructions](#destructive-command-guard-dcg) below
 
 ### Setup
 
-After cloning this template, ask Gemini CLI:
+After cloning this template, ask Claude Code:
 
 > "Set up this project: install dependencies, create the .env file from the example, and tell me what Firebase credentials I need to add."
 
@@ -99,15 +99,15 @@ gh auth login
 
 Follow the prompts to authenticate.
 
-## Working with Gemini CLI
+## Working with Claude Code
 
 ### Starting Development
 
-All work flows through OpenSpec and Beads. This keeps your work organized and helps Gemini CLI understand context across sessions.
+All work flows through OpenSpec and Beads. This keeps your work organized and helps Claude Code understand context across sessions.
 
 **1. Initialize (first time only):**
 ```bash
-openspec init --tools gemini
+openspec init --tools claude
 bd init
 ```
 
@@ -121,7 +121,7 @@ Describe what you want to build in plain language — features, user flows, requ
 ```bash
 /opsx:ff <name>
 ```
-Gemini CLI analyzes your change and creates structured artifacts (proposal, specs, design, tasks).
+Claude Code analyzes your change and creates structured artifacts (proposal, specs, design, tasks).
 
 **4. Create tasks to track work:**
 ```bash
@@ -171,7 +171,7 @@ bd sync && git push                  # sync and push
 
 For quick changes outside OpenSpec, just describe what you want:
 
-| Instead of coding... | Ask Gemini CLI... |
+| Instead of coding... | Ask Claude Code... |
 |---------------------|---------------------|
 | Writing a Vue component | "Create a user profile component that shows name, email, and avatar" |
 | Setting up routes | "Add a /settings route that shows user preferences" |
@@ -224,7 +224,7 @@ Plugins enhance your existing workflow without changing it:
 
 ## Destructive Command Guard (DCG)
 
-[DCG](https://github.com/Dicklesworthstone/destructive_command_guard) is a **required** safety hook that blocks destructive commands before Gemini CLI can execute them. It protects against accidental `git reset --hard`, `rm -rf`, `git push --force`, and 49+ other dangerous patterns.
+[DCG](https://github.com/Dicklesworthstone/destructive_command_guard) is a **required** safety hook that blocks destructive commands before Claude Code can execute them. It protects against accidental `git reset --hard`, `rm -rf`, `git push --force`, and 49+ other dangerous patterns.
 
 ### Install DCG
 
@@ -232,7 +232,7 @@ Plugins enhance your existing workflow without changing it:
 curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/destructive_command_guard/master/install.sh?$(date +%s)" | bash -s -- --easy-mode # Installs DCG with a basic set of common rules.
 ```
 
-DCG runs automatically as a Gemini CLI pre-execution hook — no additional configuration needed.
+DCG runs automatically as a Claude Code pre-execution hook — no additional configuration needed.
 
 ### What It Blocks
 
@@ -254,11 +254,11 @@ DCG will explain the rule and suggest safer alternatives. See [.claude/rules/des
 
 ## Git Worktrees (Parallel Agent Work)
 
-This template supports [git worktrees](https://git-scm.com/docs/git-worktree) for running multiple Gemini CLI agents in parallel on the same repository. Each agent works in its own worktree, avoiding file conflicts.
+This template supports [git worktrees](https://git-scm.com/docs/git-worktree) for running multiple Claude Code agents in parallel on the same repository. Each agent works in its own worktree, avoiding file conflicts.
 
 ### Why Worktrees?
 
-When Gemini CLI spawns parallel sub-agents (e.g., one building the API while another builds the UI), they need isolated working directories. Git worktrees provide this without cloning the repo multiple times — each worktree shares the same `.git` history but has its own checked-out files.
+When Claude Code spawns parallel sub-agents (e.g., one building the API while another builds the UI), they need isolated working directories. Git worktrees provide this without cloning the repo multiple times — each worktree shares the same `.git` history but has its own checked-out files.
 
 ### Creating a Worktree
 
@@ -278,7 +278,7 @@ git worktree remove ../my-project-task-a
 
 ### Bash Worktree Hook
 
-A pre-tool-use hook at `.claude/hooks/bash-worktree-fix.sh` automatically detects when Gemini CLI is running inside a worktree and adjusts Bash commands to execute in the correct worktree root. This prevents commands from accidentally running in the main repository directory.
+A pre-tool-use hook at `.claude/hooks/bash-worktree-fix.sh` automatically detects when Claude Code is running inside a worktree and adjusts Bash commands to execute in the correct worktree root. This prevents commands from accidentally running in the main repository directory.
 
 To enable the hook and default permissions:
 
@@ -329,7 +329,7 @@ git worktree remove ../my-project-task-b
 git worktree prune
 ```
 
-## Tips for Working with Gemini CLI
+## Tips for Working with Claude Code
 
 1. **Be specific about behavior** — "Show a loading spinner while saving" is better than "add loading state"
 2. **Describe the user experience** — "When the user clicks Save, disable the button and show 'Saving...'"
@@ -339,7 +339,7 @@ git worktree prune
 
 ## Project Structure
 
-Gemini CLI understands this structure and will place files appropriately:
+Claude Code understands this structure and will place files appropriately:
 
 ```
 src/
@@ -352,19 +352,19 @@ src/
 └── types/           # TypeScript definitions
 ```
 
-You don't need to memorize this — just ask Gemini CLI where things go.
+You don't need to memorize this — just ask Claude Code where things go.
 
 ## Opinionated Rules
 
-This template includes pre-configured rules (in `.claude/rules/`) that guide how Gemini CLI works. These aren't restrictions — they're guardrails that ensure consistency and prevent common mistakes.
+This template includes pre-configured rules (in `.claude/rules/`) that guide how Claude Code works. These aren't restrictions — they're guardrails that ensure consistency and prevent common mistakes.
 
-**Why opinionated?** Without rules, Gemini CLI might name files differently each time, forget conventions, or make inconsistent choices. These rules encode best practices so you get predictable, professional results.
+**Why opinionated?** Without rules, Claude Code might name files differently each time, forget conventions, or make inconsistent choices. These rules encode best practices so you get predictable, professional results.
 
 ### Key Rules
 
 | Rule | What It Does | Why It Matters |
 |------|--------------|----------------|
-| **Data Models** | Gemini CLI references `.claude/rules/firebase-data-models.md` before any database changes | Prevents schema drift and ensures type safety |
+| **Data Models** | Claude Code references `.claude/rules/firebase-data-models.md` before any database changes | Prevents schema drift and ensures type safety |
 | **Environment Variables** | Secrets go in Google Secret Manager, not code | Keeps credentials secure and deployment-ready |
 | **Security Scanning** | Mandatory security scans before commits and deployments | Catches vulnerabilities early |
 | **Destructive Command Guard** | DCG hook blocks dangerous commands before execution | Prevents accidental data loss |
@@ -372,8 +372,8 @@ This template includes pre-configured rules (in `.claude/rules/`) that guide how
 
 ### You Don't Need to Memorize These
 
-Gemini CLI reads these rules automatically. They're documented so you can:
-- Understand why Gemini CLI makes certain choices
+Claude Code reads these rules automatically. They're documented so you can:
+- Understand why Claude Code makes certain choices
 - Customize them if your project has different needs
 - Trust that conventions are being followed consistently
 
@@ -433,15 +433,15 @@ npm run deploy:rules
 
 ### Manual Deployment
 
-You can also ask Gemini CLI:
+You can also ask Claude Code:
 
 > "Help me deploy this to Firebase Hosting"
 
-Gemini CLI will guide you through the process.
+Claude Code will guide you through the process.
 
 ## Tech Stack (For Reference)
 
-You don't need to know these deeply, but Gemini CLI uses:
+You don't need to know these deeply, but Claude Code uses:
 - **Vue 3** with TypeScript
 - **Vite** for development
 - **Tailwind CSS** for styling
