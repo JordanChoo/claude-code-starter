@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from 'firebase/auth'
-import { serverTimestamp } from 'firebase/firestore'
 import {
   signIn,
   signUp,
@@ -9,7 +8,6 @@ import {
   signInWithGoogle,
   onAuthChange
 } from '@/firebase/auth'
-import { getDocument, setDocument } from '@/firebase/firestore'
 
 interface FirebaseAuthError extends Error {
   code: string
@@ -21,7 +19,6 @@ export const useAuthStore = defineStore('auth', () => {
   const actionLoading = ref(false)
   const loading = computed(() => initializing.value || actionLoading.value)
   const error = ref<string | null>(null)
-  const profileError = ref<string | null>(null)
 
   let _initialized = false
   let _unsubscribeAuth: (() => void) | null = null
@@ -65,39 +62,11 @@ export const useAuthStore = defineStore('auth', () => {
     return `An unexpected error occurred: ${e.message}`
   }
 
-  async function ensureUserDocument(firebaseUser: User) {
-    if (!firebaseUser.email) {
-      console.warn('User has no email address, skipping document creation')
-      return
-    }
-    const existing = await getDocument('users', firebaseUser.uid)
-    if (!existing) {
-      await setDocument('users', firebaseUser.uid, {
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName || null,
-        photoURL: firebaseUser.photoURL || null,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      })
-    }
-  }
-
   function init() {
     if (_initialized) return
     _initialized = true
-    _unsubscribeAuth = onAuthChange(async (firebaseUser) => {
+    _unsubscribeAuth = onAuthChange((firebaseUser) => {
       user.value = firebaseUser
-      if (firebaseUser) {
-        try {
-          profileError.value = null
-          await ensureUserDocument(firebaseUser)
-        } catch (e) {
-          console.error('Failed to ensure user document:', e)
-          profileError.value = 'Failed to set up your profile. Please try refreshing the page.'
-        }
-      } else {
-        profileError.value = null
-      }
       initializing.value = false
       _authReadyResolve?.()
       _authReadyResolve = null
@@ -182,7 +151,6 @@ export const useAuthStore = defineStore('auth', () => {
     actionLoading,
     loading,
     error,
-    profileError,
     isAuthenticated,
     userEmail,
     userId,
