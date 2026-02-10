@@ -34,7 +34,7 @@ OpenSpec + Beads solve this:
 ## How It Works
 
 ```
-/opsx:new (describe what you want) → /opsx:ff (generate artifacts) → bd create (track tasks) → /opsx:apply (implement) → /opsx:archive (complete)
+/opsx:new (describe what you want) → /opsx:ff (generate artifacts) → bd create (track tasks) → implement directly → bd close (complete)
 ```
 
 **OpenSpec** handles the *what* (specs, changes, artifacts). **Beads** handles the *tracking* (tasks, dependencies, progress). Both persist in git, so nothing gets lost.
@@ -112,60 +112,59 @@ bd init
 
 **2. Start a new change:**
 ```bash
-/opsx:new
+/opsx:new <name>
 ```
 Describe what you want to build in plain language — features, user flows, requirements.
 
 **3. Fast-forward through artifact creation:**
 ```bash
-/opsx:ff
+/opsx:ff <name>
 ```
-Claude Code analyzes your change and creates structured artifacts.
+Claude Code analyzes your change and creates structured artifacts (proposal, specs, design, tasks).
 
 **4. Create tasks to track work:**
 ```bash
-bd create "Implement user auth API" -p 0
-bd create "Add login UI component" -p 1
-bd dep add <child-id> <parent-id>    # set dependencies
+bd create "Implement user auth API" -t task -p 2 -d "## Requirements
+- What needs to be done
+## Acceptance Criteria
+- How to verify it's done"
+
+bd create "Add login UI component" -t task -p 2 -d "..."
 ```
-Beads tracks each task in `.beads/`, versioned alongside your code.
+Beads tracks each task in `.beads/`, versioned alongside your code. Every `bd create` **must** include `-d` with a description.
 
 **5. Implement the tasks:**
 ```bash
-bd update <id> --claim               # claim a task
-/opsx:apply                          # implement via OpenSpec
-bd update <id> --resolve             # mark complete
+bd update <id> --status in_progress  # claim a task
+# ... write code directly, referencing OpenSpec artifacts ...
+bd close <id> --reason "Completed"   # mark complete
 ```
 
-**6. Archive when complete:**
+**6. Clean up when complete:**
 ```bash
-/opsx:archive
+rm -rf openspec/changes/<name>       # delete planning artifacts
+bd sync && git push                  # sync and push
 ```
 
 ### Quick Commands Reference
 
-**OpenSpec (specs & changes):**
+**OpenSpec (planning — use only when needed):**
 
 | Command | Purpose |
 |---------|---------|
-| `/opsx:new` | Start a new change |
-| `/opsx:ff` | Fast-forward artifact creation |
-| `/opsx:apply` | Implement tasks from a change |
-| `/opsx:continue` | Continue working on a change |
-| `/opsx:verify` | Verify implementation matches artifacts |
-| `/opsx:archive` | Archive a completed change |
 | `/opsx:explore` | Think through ideas before starting |
+| `/opsx:new <name>` | Start a new change step-by-step |
+| `/opsx:ff <name>` | Generate all planning artifacts at once |
 
-**Beads (task tracking):**
+**Beads (execution tracking):**
 
 | Command | Purpose |
 |---------|---------|
 | `bd ready` | Show unblocked tasks ready for work |
-| `bd create "Title" -p 0` | Create a task (0 = highest priority) |
-| `bd update <id> --claim` | Claim a task and mark in-progress |
-| `bd update <id> --resolve` | Mark a task as complete |
-| `bd dep add <child> <parent>` | Set task dependencies |
-| `bd show <id>` | View task details and history |
+| `bd create "Title" -t task -p 2 -d "..."` | Create a task (must include `-d`) |
+| `bd update <id> --status in_progress` | Claim a task |
+| `bd close <id> --reason "Completed"` | Mark a task as complete |
+| `bd sync` | Sync tracking with git |
 
 ### Ad-Hoc Requests
 
@@ -217,9 +216,9 @@ For additional specialized capabilities, install plugins from the [WHobson Agent
 Plugins enhance your existing workflow without changing it:
 
 1. **Install plugins once** (globally available across projects)
-2. **Start changes normally** with `/opsx:new`
-3. **Plugins work automatically** during implementation via `/opsx:apply`
-4. **Run security scans** before archiving with `/security-scanning:security-audit`
+2. **Start changes normally** with `/opsx:new` or `/opsx:ff`
+3. **Plugins work automatically** during implementation
+4. **Run security scans** before committing with `/security-scanning:security-audit`
 5. **Use orchestration** for complex features with `/full-stack-orchestration:full-stack-feature "feature name"`
 
 ## Destructive Command Guard (DCG)
