@@ -19,10 +19,12 @@
     "firebase:emulators:ci": "firebase emulators:start --project demo-test",
     "deploy": "./scripts/verify-env.sh && npm run build && firebase deploy",
     "deploy:rules": "firebase deploy --only firestore:rules",
-    "deploy:hosting": "npm run build && firebase deploy --only hosting"
+    "deploy:hosting": "npm run build && firebase deploy --only hosting",
+    "secrets:scan": "secretlint \"**/*\""
   },
   "lint-staged": {
-    "*.{js,ts,vue}": "eslint --fix"
+    "*.{js,ts,vue}": "eslint --fix",
+    "*": "secretlint"
   },
   "dependencies": {
     "firebase": "^12.9.0",
@@ -46,6 +48,8 @@
     "jsdom": "^28.0.0",
     "lint-staged": "^16.2.7",
     "postcss": "^8.4.33",
+    "secretlint": "^11.3.1",
+    "@secretlint/secretlint-rule-preset-recommend": "^11.3.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
     "typescript-eslint": "^8.53.1",
