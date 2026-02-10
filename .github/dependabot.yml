@@ -1,0 +1,27 @@
+# Dependabot configuration
+# Controls automated dependency update PRs
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    # Group minor/patch updates to reduce PR noise
+    groups:
+      firebase:
+        patterns:
+          - "firebase"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # Firebase major versions require manual review
+    ignore:
+      - dependency-name: "firebase"
+        update-types: ["version-update:semver-major"]
