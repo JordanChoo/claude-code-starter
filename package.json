@@ -10,32 +10,53 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky",
-    "deploy": "npm run build && firebase deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:chromium": "npx playwright test --project=chromium",
+    "test:e2e:ui": "playwright test --ui",
+    "firebase:emulators": "firebase emulators:start --project demo-test",
+    "firebase:emulators:ci": "firebase emulators:start --project demo-test",
+    "deploy": "./scripts/verify-env.sh && npm run build && firebase deploy",
     "deploy:rules": "firebase deploy --only firestore:rules",
-    "deploy:hosting": "firebase deploy --only hosting"
+    "deploy:storage-rules": "firebase deploy --only storage",
+    "deploy:all-rules": "firebase deploy --only firestore:rules,storage",
+    "deploy:hosting": "./scripts/verify-env.sh && npm run build && firebase deploy --only hosting",
+    "secrets:scan": "secretlint \"**/*\""
   },
   "lint-staged": {
-    "*.{js,ts,vue}": "eslint --fix"
+    "*.{js,ts,vue}": "eslint --fix",
+    "*": "secretlint"
   },
   "dependencies": {
-    "firebase": "^10.8.0",
+    "firebase": "12.9.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@vitejs/plugin-vue": "^5.0.3",
-    "autoprefixer": "^10.4.17",
+    "@pinia/testing": "^0.1.7",
+    "@playwright/test": "^1.58.2",
+    "@secretlint/secretlint-rule-preset-recommend": "^11.3.1",
+    "@tailwindcss/vite": "^4.1.18",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/vue": "^8.1.0",
+    "@vitejs/plugin-vue": "^6.0.4",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vue/test-utils": "^2.4.6",
     "eslint": "^9.39.2",
     "eslint-plugin-vue": "^10.7.0",
     "husky": "^9.1.7",
+    "jsdom": "^28.0.0",
     "lint-staged": "^16.2.7",
-    "postcss": "^8.4.33",
-    "tailwindcss": "^3.4.1",
+    "secretlint": "^11.3.1",
+    "tailwindcss": "^4.1.18",
     "typescript": "^5.3.3",
     "typescript-eslint": "^8.53.1",
-    "vite": "^5.0.12",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18",
     "vue-tsc": "^2.0.0"
   }
 }

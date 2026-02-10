@@ -36,6 +36,27 @@ export default tseslint.config(
     }
   },
 
+  // Test files configuration
+  {
+    files: ['tests/**/*.ts'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        vi: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        test: 'readonly'
+      }
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off'
+    }
+  },
+
   // Vue files configuration
   {
     files: ['**/*.vue'],

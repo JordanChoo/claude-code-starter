@@ -1,16 +1,30 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import ErrorBoundary from '@/components/ErrorBoundary.vue'
+import { useConnectionState } from '@/composables/useConnectionState'
 
 const authStore = useAuthStore()
+const router = useRouter()
+const route = useRoute()
+const { isOnline } = useConnectionState()
 
-onMounted(() => {
-  authStore.init()
-})
+async function handleLogout() {
+  try {
+    await authStore.logout()
+  } catch {
+    // Error already stored in authStore.error by the store's logout method
+  }
+  router.push('/')
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50">
+    <div v-if="!isOnline" class="bg-amber-500 text-white text-center py-2 text-sm font-medium">
+      You are offline. Some features may be unavailable.
+    </div>
     <nav class="bg-white shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
@@ -18,10 +32,13 @@ onMounted(() => {
             Vue Firebase Starter
           </router-link>
           <div class="flex items-center space-x-4">
-            <template v-if="authStore.isAuthenticated">
+            <template v-if="authStore.loading">
+              <span class="text-gray-400 text-sm">Loading...</span>
+            </template>
+            <template v-else-if="authStore.isAuthenticated">
               <span class="text-gray-600">{{ authStore.userEmail }}</span>
               <button
-                @click="authStore.logout"
+                @click="handleLogout"
                 class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
               >
                 Logout
@@ -40,7 +57,25 @@ onMounted(() => {
       </div>
     </nav>
     <main>
-      <router-view />
+      <ErrorBoundary>
+        <template v-if="!authStore.loading">
+          <component :is="route.meta.layout === 'none' ? 'div' : DefaultLayout">
+            <router-view v-slot="{ Component }">
+              <Suspense>
+                <component :is="Component" />
+                <template #fallback>
+                  <div class="flex justify-center items-center py-20">
+                    <span class="text-gray-400">Loading...</span>
+                  </div>
+                </template>
+              </Suspense>
+            </router-view>
+          </component>
+        </template>
+        <div v-else class="flex justify-center items-center py-20">
+          <span class="text-gray-400">Loading...</span>
+        </div>
+      </ErrorBoundary>
     </main>
   </div>
 </template>

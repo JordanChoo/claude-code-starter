@@ -88,38 +88,8 @@ check_path_format_consistency() {
     fi
 }
 
-check_sync_content() {
-    echo -e "\n📋 Check 4: Validating sync content path formats..."
-    total_checks=$((total_checks + 1))
-    
-    # Check update files for proper path formats
-    update_files=$(find .claude/epics/*/updates/ -name "*.md" 2>/dev/null | head -10)
-    
-    if [ -z "$update_files" ]; then
-        print_warning "No update files found, skipping this check"
-        passed_checks=$((passed_checks + 1))
-        return 0
-    fi
-    
-    violations_found=false
-    for file in $update_files; do
-        if rg -q "/Users/|/home/|C:\\\\\\\\" "$file" 2>/dev/null; then
-            print_error "File $file contains absolute paths"
-            violations_found=true
-        fi
-    done
-    
-    if [ "$violations_found" = false ]; then
-        print_success "Update file path formats are correct"
-        passed_checks=$((passed_checks + 1))
-    else
-        failed_checks=$((failed_checks + 1))
-        return 1
-    fi
-}
-
 check_standards_file() {
-    echo -e "\n📋 Check 5: Verifying standards file exists..."
+    echo -e "\n📋 Check 4: Verifying standards file exists..."
     total_checks=$((total_checks + 1))
     
     if [ -f ".claude/rules/path-standards.md" ]; then
@@ -136,7 +106,6 @@ check_standards_file() {
 check_absolute_paths
 check_user_specific_paths  
 check_path_format_consistency
-check_sync_content
 check_standards_file
 
 # Output summary

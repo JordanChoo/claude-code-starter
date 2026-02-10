@@ -20,30 +20,37 @@ service cloud.firestore {
     }
 
     function validDisplayName(name) {
-      return name == null || (name.size() <= 100 && name.trim() == name);
+      return name == null || (name.size() > 0 && name.size() <= 100 && name.trim() == name);
     }
 
     function validPhotoURL(url) {
       return url == null || (url.matches('^https://.*') && url.size() <= 2048);
     }
 
+    function validRole(role) {
+      return role == 'user' || role == 'admin' || role == 'moderator';
+    }
+
     // Users collection rules
     match /users/{userId} {
       allow read: if isOwner(userId);
 
-      allow create: if isOwner(userId)
-        && validEmail(request.resource.data.email)
+      allow create: if request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
-        && validTimestamp('createdAt')
-        && validTimestamp('updatedAt');
+        && validRole(request.resource.data.role)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
 
       allow update: if isOwner(userId)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.email == resource.data.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
-        && validTimestamp('updatedAt')
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.email == resource.data.email;
+        && validRole(request.resource.data.role)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.updatedAt == request.time;
 
       allow delete: if isOwner(userId);
     }

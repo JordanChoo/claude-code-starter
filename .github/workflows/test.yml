@@ -1,0 +1,102 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-and-component:
+    name: Unit & Component Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Scan for secrets
+        run: npx secretlint "**/*"
+
+      - name: Type check
+        run: npx vue-tsc --noEmit
+
+      - name: Run unit and component tests
+        run: npm test
+
+      - name: Run coverage report
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Start Firebase Emulators
+        run: |
+          firebase emulators:start --project demo-test &
+          # Wait for Auth emulator
+          for i in $(seq 1 30); do
+            curl -s http://127.0.0.1:9099/ > /dev/null 2>&1 && break || sleep 1
+          done
+          curl -s http://127.0.0.1:9099/ || (echo "Auth emulator not ready" && exit 1)
+          # Wait for Firestore emulator
+          for i in $(seq 1 30); do
+            curl -s http://127.0.0.1:8080/ > /dev/null 2>&1 && break || sleep 1
+          done
+          curl -s http://127.0.0.1:8080/ || (echo "Firestore emulator not ready" && exit 1)
+
+      - name: Run E2E tests
+        run: npx playwright test --project=chromium
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 14

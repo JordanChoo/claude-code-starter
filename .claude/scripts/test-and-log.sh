@@ -46,24 +46,37 @@ if [[ "$TEST_PATH" =~ \.py$ ]]; then
     # Python - try pytest first, fallback to python
     if command -v pytest >/dev/null 2>&1; then
         pytest "$TEST_PATH" -v > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     else
         python "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     fi
-elif [[ "$TEST_PATH" =~ \.(js|ts)$ ]]; then
-    # JavaScript/TypeScript - try npm test, then jest, then node
-    if [ -f package.json ] && grep -q "test" package.json; then
-        npm test "$TEST_PATH" > "$LOG_FILE" 2>&1
+elif [[ "$TEST_PATH" =~ \.(js|ts|vue)$ ]]; then
+    # JavaScript/TypeScript/Vue - detect framework
+    if [ -f "vitest.config.ts" ] || [ -f "vitest.config.js" ] || ([ -f "package.json" ] && grep -q '"vitest"' package.json); then
+        npx vitest run "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
+    elif ([ -f "playwright.config.ts" ] || [ -f "playwright.config.js" ]) && echo "$TEST_PATH" | grep -qE "(e2e|spec)"; then
+        npx playwright test "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
+    elif [ -f package.json ] && grep -q '"test"[[:space:]]*:' package.json; then
+        npm test -- "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     elif command -v jest >/dev/null 2>&1; then
         jest "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     else
         node "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     fi
 elif [[ "$TEST_PATH" =~ \.java$ ]]; then
     # Java - try Maven, then Gradle
     if [ -f pom.xml ]; then
         mvn test -Dtest="$(basename "$TEST_PATH" .java)" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     elif [ -f build.gradle ] || [ -f build.gradle.kts ]; then
         ./gradlew test --tests "$(basename "$TEST_PATH" .java)" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     else
         echo "❌ Java test runner not found (need Maven or Gradle)" > "$LOG_FILE" 2>&1
         exit 1
@@ -71,48 +84,57 @@ elif [[ "$TEST_PATH" =~ \.java$ ]]; then
 elif [[ "$TEST_PATH" =~ \.cs$ ]]; then
     # C# .NET
     dotnet test "$TEST_PATH" > "$LOG_FILE" 2>&1
+    EXIT_CODE=$?
 elif [[ "$TEST_PATH" =~ \.rb$ ]]; then
     # Ruby - try bundle exec rspec, then rspec
     if [ -f Gemfile ]; then
         bundle exec rspec "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     elif command -v rspec >/dev/null 2>&1; then
         rspec "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     else
         ruby "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     fi
 elif [[ "$TEST_PATH" =~ \.php$ ]]; then
     # PHP - try PHPUnit
     if [ -f vendor/bin/phpunit ]; then
         ./vendor/bin/phpunit "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     elif command -v phpunit >/dev/null 2>&1; then
         phpunit "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     else
         php "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     fi
 elif [[ "$TEST_PATH" =~ \.go$ ]]; then
     # Go
     go test "$(dirname "$TEST_PATH")" -v > "$LOG_FILE" 2>&1
+    EXIT_CODE=$?
 elif [[ "$TEST_PATH" =~ \.rs$ ]]; then
     # Rust
     cargo test "$(basename "$TEST_PATH" .rs)" > "$LOG_FILE" 2>&1
+    EXIT_CODE=$?
 elif [[ "$TEST_PATH" =~ \.swift$ ]]; then
     # Swift
     swift test > "$LOG_FILE" 2>&1
+    EXIT_CODE=$?
 elif [[ "$TEST_PATH" =~ \.dart$ ]]; then
     # Dart/Flutter
     if [ -f pubspec.yaml ]; then
         flutter test "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     else
         dart test "$TEST_PATH" > "$LOG_FILE" 2>&1
+        EXIT_CODE=$?
     fi
 else
     echo "❌ Unsupported test file type: $TEST_PATH" > "$LOG_FILE" 2>&1
     echo "❌ Unsupported test file type: $TEST_PATH"
     exit 1
 fi
-
-# Check exit code
-EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 0 ]; then
     echo "✅ Test completed successfully. Log saved to $LOG_FILE"

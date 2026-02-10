@@ -87,6 +87,7 @@ Before modifying any data model schema:
 │  │      ├── email: string                                   │   │
 │  │      ├── displayName?: string                            │   │
 │  │      ├── photoURL?: string                               │   │
+│  │      ├── role?: UserRole                                 │   │
 │  │      ├── createdAt: Timestamp                            │   │
 │  │      └── updatedAt: Timestamp                            │   │
 │  └─────────────────────────────────────────────────────────┘   │
@@ -109,11 +110,14 @@ Before modifying any data model schema:
 The primary collection storing user profile data, linked to Firebase Authentication.
 
 ```typescript
+type UserRole = 'user' | 'admin' | 'moderator'
+
 interface User extends BaseDocument {
   id: string                    // Firebase Auth UID (document ID)
   email: string                 // User email address
   displayName?: string          // Optional display name
   photoURL?: string             // Profile photo URL (from OAuth or uploaded)
+  role?: UserRole               // User role for RBAC (default: 'user')
   createdAt: Timestamp          // Account creation timestamp
   updatedAt: Timestamp          // Last profile modification timestamp
 }
@@ -133,6 +137,7 @@ interface User extends BaseDocument {
 | `email` | `string` | Yes | - | User's email address from authentication |
 | `displayName` | `string` | No | `null` | User-provided or OAuth-provided display name |
 | `photoURL` | `string` | No | `null` | URL to profile photo (OAuth or Cloud Storage) |
+| `role` | `string` | No | `'user'` | User role: 'user', 'admin', or 'moderator' |
 | `createdAt` | `Timestamp` | Yes | Server timestamp | Set once on document creation |
 | `updatedAt` | `Timestamp` | Yes | Server timestamp | Updated on every modification |
 
@@ -141,11 +146,12 @@ interface User extends BaseDocument {
 | Field | Validation Rules |
 |-------|-----------------|
 | `id` | Must be non-empty string; must match authenticated user's UID |
-| `email` | Must be valid email format; max 320 characters |
-| `displayName` | Max 100 characters; no leading/trailing whitespace; alphanumeric and spaces only |
+| `email` | Must match auth token email on create; immutable after creation (note: `validEmail` helper is defined but not called in rules) |
+| `displayName` | Null allowed; when provided, min 1 and max 100 characters; no leading/trailing whitespace |
 | `photoURL` | Must be valid URL (https only); max 2048 characters |
+| `role` | Must be one of: 'user', 'admin', 'moderator'; immutable by user (only admin can change via backend) |
 | `createdAt` | Immutable after creation; must be server timestamp |
-| `updatedAt` | Must be server timestamp; cannot be in future |
+| `updatedAt` | Must equal server timestamp (`request.time`) on every write |
 
 ---
 
@@ -207,9 +213,10 @@ All documents MUST include:
 | Collection | Field | Type | Required | Constraints |
 |------------|-------|------|----------|-------------|
 | users | id | string | Yes | Matches Firebase Auth UID |
-| users | email | string | Yes | Valid email format, max 320 chars |
-| users | displayName | string | No | Max 100 chars, trimmed |
+| users | email | string | Yes | Must match auth token email; immutable after creation |
+| users | displayName | string | No | Null allowed; min 1, max 100 chars; no leading/trailing whitespace |
 | users | photoURL | string | No | Valid HTTPS URL, max 2048 chars |
+| users | role | string | No | One of: 'user', 'admin', 'moderator'; immutable on self-update |
 | users | createdAt | Timestamp | Yes | Server timestamp, immutable |
 | users | updatedAt | Timestamp | Yes | Server timestamp |
 
@@ -253,6 +260,7 @@ All documents MUST include:
      email: user.email,
      displayName: user.displayName || null,
      photoURL: user.photoURL || null,
+     role: 'user',
      createdAt: serverTimestamp(),
      updatedAt: serverTimestamp()
    }
@@ -355,6 +363,7 @@ All documents MUST include:
 |------|----------|---------|
 | `BaseDocument` | `src/types/models.ts` | Base interface for all documents |
 | `User` | `src/types/models.ts` | User collection interface |
+| `UserRole` | `src/types/models.ts` | Union type for user roles ('user', 'admin', 'moderator') |
 | `NewDocument<T>` | `src/types/models.ts` | Helper for creating new documents |
 | `UpdateDocument<T>` | `src/types/models.ts` | Helper for updating documents |
 
@@ -382,6 +391,10 @@ When changing existing models:
 
 ### Migration Script Template
 
+> **Note:** The `migrations/` directory does not yet exist in this project. Create it and
+> a runner script before writing your first migration. For simple field additions,
+> consider using the Firebase console or a one-off script instead.
+
 ```typescript
 // migrations/YYYYMMDD_description.ts
 import { db } from '@/firebase'
@@ -401,7 +414,7 @@ export async function migrate() {
 
 ### Migration Checklist
 
-1. [ ] Create migration script in `migrations/` directory
+1. [ ] Create `migrations/` directory if it doesn't exist, then add migration script
 2. [ ] Test migration on emulator first
 3. [ ] Back up production data before running
 4. [ ] Update this document with new schema
@@ -417,7 +430,19 @@ All data model changes MUST be logged here.
 
 ### [Unreleased]
 
-<!-- Add pending changes here before deployment -->
+- **Role-Based Access Control (RBAC)**
+  - Added `role` field to `users` collection (optional, defaults to `'user'`)
+  - Valid roles: `'user'`, `'admin'`, `'moderator'`
+  - Added `validRole` helper to Firestore security rules
+  - Role is validated on create and update; immutable on self-update (prevents privilege escalation)
+  - Added `UserRole` type to `src/types/models.ts`
+  - Route guard support via `requiredRoles` in `RouteMeta`
+
+- **Security Rules Documentation Sync**
+  - Fixed `email` property rule: was "valid email format; max 320 chars", now accurately documents that rules enforce matching auth token email on create and immutability on update (`validEmail` helper is defined but not called)
+  - Fixed `displayName` property rule: removed incorrect "alphanumeric and spaces only" constraint, added min 1 character requirement to match actual `validDisplayName` function
+  - Fixed `updatedAt` property rule: clarified must equal `request.time` (was "cannot be in future")
+  - Updated Collection-Specific Constraints table to match corrected property rules
 
 ### 2025-01-16
 
@@ -470,35 +495,45 @@ service cloud.firestore {
     }
 
     function validDisplayName(name) {
-      return name == null || (name.size() <= 100 && name.trim() == name);
+      return name == null || (name.size() > 0 && name.size() <= 100 && name.trim() == name);
     }
 
     function validPhotoURL(url) {
       return url == null || (url.matches('^https://.*') && url.size() <= 2048);
     }
 
+    function validRole(role) {
+      return role == 'user' || role == 'admin' || role == 'moderator';
+    }
+
     // Users collection rules
     match /users/{userId} {
       allow read: if isOwner(userId);
 
-      allow create: if isOwner(userId)
-        && validEmail(request.resource.data.email)
+      allow create: if request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
-        && validTimestamp('createdAt')
-        && validTimestamp('updatedAt');
+        && validRole(request.resource.data.role)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
 
       allow update: if isOwner(userId)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.email == resource.data.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
-        && validTimestamp('updatedAt')
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.email == resource.data.email;
+        && validRole(request.resource.data.role)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.updatedAt == request.time;
 
       allow delete: if isOwner(userId);
     }
 
-    // Add collection rules here as models are added
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
 ```

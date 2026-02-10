@@ -6,11 +6,6 @@ allowed-tools: Bash, Read, Write, LS
 
 This command updates the project context documentation in `.claude/context/` to reflect the current state of the project. Run this at the end of each development session to keep context accurate.
 
-## Required Rules
-
-**IMPORTANT:** Before executing this command, read and follow:
-- `.claude/rules/datetime.md` - For getting real current date/time
-
 ## Preflight Checklist
 
 Before proceeding, complete these validation steps.

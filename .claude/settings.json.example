@@ -1,4 +1,47 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(bash .claude/scripts/test-and-log.sh:*)",
+      "Bash(.claude/scripts/test-and-log.sh:*)",
+      "Bash(openspec:*)",
+      "Bash(bd:*)",
+      "Bash(dcg:*)",
+
+      "Bash(cat:*)",
+      "Bash(composer:*)",
+      "Bash(find:*)",
+      "Bash(gh:*)",
+      "Bash(git:*)",
+      "Bash(grep:*)",
+      "Bash(kill:*)",
+      "Bash(ln:*)",
+      "Bash(ls:*)",
+      "Bash(mv:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(pnpm:*)",
+      "Bash(pytest:*)",
+      "Bash(python:*)",
+      "Bash(mvn:*)",
+      "Bash(gradle:*)",
+      "Bash(dotnet:*)",
+      "Bash(cargo:*)",
+      "Bash(go:*)",
+      "Bash(swift:*)",
+      "Bash(flutter:*)",
+      "Bash(bundle:*)",
+      "Bash(ctest:*)",
+      "Bash(make:*)",
+      "Bash(rm:*)",
+      "Bash(ruff:*)",
+      "Bash(sed:*)",
+      "Bash(touch:*)",
+      "Bash(tree:*)",
+      "List(**)",
+      "WebFetch(domain:github.com)",
+      "WebSearch"
+    ]
+  },
   "hooks": {
     "pre-tool-use": {
       "Bash": {

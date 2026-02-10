@@ -1,6 +1,6 @@
 # Vue Firebase Starter (Claude Code Edition)
 
-A boilerplate template designed for **Claude Code-first development** powered by **[Claude Code PM](https://github.com/automazeio/ccpm)** — a spec-driven workflow where you describe what you want, and AI implements it with full traceability.
+A boilerplate template designed for **[Claude Code-first development](./CLAUDE.md)** powered by **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** and **[Beads](https://github.com/steveyegge/beads/)** — a spec-driven workflow with git-backed task tracking where you describe what you want, and AI implements it with full traceability.
 
 ## Philosophy
 
@@ -13,35 +13,40 @@ This template is built for people who work **with** Claude Code rather than writ
 
 You don't need to know TypeScript, Vue, or Firebase deeply — Claude Code handles the implementation details.
 
-## Why Use the PM System?
+## Why Use OpenSpec?
 
 Without structure, AI-assisted development becomes chaotic — context gets lost between sessions, changes are hard to track, and you lose visibility into what's been done.
 
-The PM system solves this:
+OpenSpec + Beads solve this:
 
-- **Context survives sessions** — PRDs and tasks persist locally, so Claude Code picks up where it left off
-- **Work is traceable** — Every code change links back to a GitHub issue and PRD requirement
-- **Progress is visible** — Track what's done, what's in progress, and what's blocked
-- **Parallel work is possible** — Multiple tasks can be worked on independently
+- **Context survives sessions** — Specs, changes, and tasks persist locally in git, so Claude Code picks up where it left off
+- **Work is traceable** — Every code change links back to a spec and a tracked task
+- **Progress is visible** — `bd ready` shows what's unblocked, what's in progress, and what's left
+- **Lightweight** — Minimal overhead, no heavy PM infrastructure
+- **Agent-native** — Beads uses hash-based IDs and JSON storage designed for AI agents working in parallel
 
-**Rule of thumb:** If it takes more than 5 minutes, use the PM system.
+**Rule of thumb:** If it takes more than 5 minutes, use OpenSpec.
 
 > **Avoid this:** "Hey Claude, add user authentication to my app"
 >
-> **Do this instead:** Create a PRD describing the auth requirements, then let the PM system break it into trackable tasks.
+> **Do this instead:** Start a new change describing the auth requirements, then let OpenSpec break it into trackable tasks.
 
 ## How It Works
 
 ```
-PRD (what you want) → Epic (implementation plan) → Tasks (individual work items) → GitHub Issues (tracking) → Code
+/opsx:new (describe what you want) → /opsx:ff (generate artifacts) → bd create (track tasks) → implement directly → bd close (complete)
 ```
 
-Each step creates artifacts that persist, so nothing gets lost.
+**OpenSpec** handles the *what* (specs, changes, artifacts). **Beads** handles the *tracking* (tasks, dependencies, progress). Both persist in git, so nothing gets lost.
 
 ## What's Included
 
 **Core Workflow:**
-- **[Claude Code PM](https://github.com/automazeio/ccpm)** — Spec-driven development with GitHub issue tracking
+- **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** — Spec-driven development with structured change tracking
+- **[Beads](https://github.com/steveyegge/beads/)** — Git-backed task tracking designed for AI agents
+
+**Safety:**
+- **[DCG](https://github.com/Dicklesworthstone/destructive_command_guard)** — Destructive Command Guard hook that blocks dangerous commands before execution
 
 **Pre-configured Stack:**
 - **Authentication** — Email/password and Google sign-in ready to use
@@ -57,7 +62,10 @@ Each step creates artifacts that persist, so nothing gets lost.
 
 - Node.js 18+ ([download](https://nodejs.org))
 - A Firebase project ([create one](https://console.firebase.google.com))
-- Claude Code CLI installed
+- Claude Code: `npm install -g @anthropic-ai/claude-code` ([docs](https://docs.anthropic.com/en/docs/claude-code/overview))
+- Beads CLI: `npm install -g @beads/bd` ([docs](https://github.com/steveyegge/beads/))
+(Note: If `npm install` fails, ensure you have access to the `@beads` npm registry or consult Beads documentation for alternative installation methods.)
+- DCG (Destructive Command Guard): see [install instructions](#destructive-command-guard-dcg) below
 
 ### Setup
 
@@ -75,13 +83,13 @@ Then add your Firebase credentials to `.env`.
 
 ### GitHub Setup
 
-The PM system syncs tasks to GitHub Issues. Set this up before using `/pm:epic-sync`:
+For tracking changes with GitHub Issues, set up the GitHub CLI:
 
 **1. Create a GitHub repository** for your project (or use an existing one).
 
 **2. Connect your local repo to GitHub:**
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git # Replace YOUR_USERNAME and YOUR_REPO
 ```
 
 **3. Authenticate the GitHub CLI:**
@@ -89,62 +97,79 @@ git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
 gh auth login
 ```
 
-Follow the prompts to authenticate. This enables Claude Code to create and manage issues.
+Follow the prompts to authenticate.
 
 ## Working with Claude Code
 
 ### Starting Development
 
-All work flows through the PM (Project Management) system. This keeps your work organized, creates GitHub issues for tracking, and helps Claude Code understand context across sessions.
+All work flows through OpenSpec and Beads. This keeps your work organized and helps Claude Code understand context across sessions.
 
-**1. Initialize the PM system (first time only):**
+**1. Initialize (first time only):**
 ```bash
-/pm:init
+openspec init --tools claude
+bd init
 ```
 
-**2. Create a Product Requirements Document (PRD):**
+**2. Start a new change:**
 ```bash
-/pm:prd-new user-profiles
+/opsx:new <name>
 ```
-This creates a PRD file. Describe what you want to build in plain language — features, user flows, requirements.
+Describe what you want to build in plain language — features, user flows, requirements.
 
-**3. Parse the PRD into an implementation plan:**
+**3. Fast-forward through artifact creation:**
 ```bash
-/pm:prd-parse user-profiles
+/opsx:ff <name>
 ```
-Claude Code analyzes your PRD and creates a structured epic with tasks.
+Claude Code analyzes your change and creates structured artifacts (proposal, specs, design, tasks).
 
-**4. Decompose into workable tasks:**
+**4. Create tasks to track work:**
 ```bash
-/pm:epic-decompose user-profiles
-```
-Breaks the epic into individual tasks that can be worked on independently.
+bd create "Implement user auth API" -t task -p 2 -d "## Requirements
+- What needs to be done
+## Acceptance Criteria
+- How to verify it's done"
 
-**5. Sync to GitHub Issues:**
-```bash
-/pm:epic-sync user-profiles
+bd create "Add login UI component" -t task -p 2 -d "..."
 ```
-Creates GitHub issues for each task, enabling tracking and parallel work.
+Beads tracks each task in `.beads/`, versioned alongside your code. Every `bd create` **must** include `-d` with a description.
 
-**6. Start working on tasks:**
+**5. Implement the tasks:**
 ```bash
-/pm:issue-start [issue-number]
+bd update <id> --status in_progress  # claim a task
+# ... write code directly, referencing OpenSpec artifacts ...
+bd close <id> --reason "Completed"   # mark complete
 ```
-Claude Code picks up the task, analyzes what needs to be done, and implements it.
+
+**6. Clean up when complete:**
+```bash
+rm -rf openspec/changes/<name>       # delete planning artifacts
+bd sync && git push                  # sync and push
+```
 
 ### Quick Commands Reference
 
+**OpenSpec (planning — use only when needed):**
+
 | Command | Purpose |
 |---------|---------|
-| `/pm:status` | See overall project status |
-| `/pm:next` | Get the next task to work on |
-| `/pm:issue-close [number]` | Mark a task as complete |
-| `/pm:epic-status [name]` | Check progress on an epic |
-| `/pm:help` | See all available commands |
+| `/opsx:explore` | Explore and refine ideas interactively before starting a new change |
+| `/opsx:new <name>` | Start a new change step-by-step |
+| `/opsx:ff <name>` | Generate all planning artifacts at once |
+
+**Beads (execution tracking):**
+
+| Command | Purpose |
+|---------|---------|
+| `bd ready` | Show unblocked tasks ready for work |
+| `bd create "Title" -t task -p 2 -d "..."` | Create a task (must include `-d`) |
+| `bd update <id> --status in_progress` | Claim a task |
+| `bd close <id> --reason "Completed"` | Mark a task as complete |
+| `bd sync` | Sync tracking with git |
 
 ### Ad-Hoc Requests
 
-For quick changes outside the PM system, just describe what you want:
+For quick changes outside OpenSpec, just describe what you want:
 
 | Instead of coding... | Ask Claude Code... |
 |---------------------|---------------------|
@@ -153,11 +178,11 @@ For quick changes outside the PM system, just describe what you want:
 | Writing Firestore queries | "Create a function to get all posts by the current user, sorted by date" |
 | Handling auth | "Add Google login to the login page" |
 
-Use ad-hoc requests for small tweaks. Use the PM system for features.
+Use ad-hoc requests for small tweaks. Use OpenSpec + Beads for features.
 
 ## Extending with WHobson Agents
 
-For additional specialized capabilities, install plugins from the [WHobson Agents](https://github.com/wshobson/agents) marketplace. It provides **100+ specialized AI agents** across categories like security, testing, DevOps, and more.
+This template includes a few foundational agents within the `.claude/agents/` directory (e.g., `code-analyzer.md`, `parallel-worker.md`) that are core to the workflow. For additional specialized capabilities, install plugins from the [WHobson Agents](https://github.com/wshobson/agents) marketplace. It provides **100+ specialized AI agents** across categories like security, testing, DevOps, and more.
 
 ### Recommended Plugins for This Stack
 
@@ -187,22 +212,130 @@ For additional specialized capabilities, install plugins from the [WHobson Agent
 | `git-pr-workflows` | Git and PR automation | Creating PRs, branch management |
 | `code-documentation` | Documentation generation | Documenting code and APIs |
 
-### Using Plugins with the PM Workflow
+### Using Plugins with OpenSpec
 
 Plugins enhance your existing workflow without changing it:
 
 1. **Install plugins once** (globally available across projects)
-2. **Start tasks normally** with `/pm:issue-start [number]`
+2. **Start changes normally** with `/opsx:new` or `/opsx:ff`
 3. **Plugins work automatically** during implementation
-4. **Run security scans** before `/pm:issue-close` with `/security-scanning:security-audit`
+4. **Run security scans** before committing with `/security-scanning:security-sast`
 5. **Use orchestration** for complex features with `/full-stack-orchestration:full-stack-feature "feature name"`
+
+## Destructive Command Guard (DCG)
+
+[DCG](https://github.com/Dicklesworthstone/destructive_command_guard) is a **required** safety hook that blocks destructive commands before Claude Code can execute them. It protects against accidental `git reset --hard`, `rm -rf`, `git push --force`, and 49+ other dangerous patterns.
+
+### Install DCG
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/destructive_command_guard/master/install.sh?$(date +%s)" | bash -s -- --easy-mode # Installs DCG with a basic set of common rules.
+```
+
+DCG runs automatically as a Claude Code pre-execution hook — no additional configuration needed.
+
+### What It Blocks
+
+| Category | Examples |
+|----------|----------|
+| **Git** | `git reset --hard`, `git push --force`, `git clean -f`, `git branch -D` |
+| **Filesystem** | `rm -rf` on non-temp paths, inline destructive scripts |
+| **Databases** | `DROP TABLE`, `TRUNCATE`, destructive SQL (via packs) |
+| **Cloud/Infra** | AWS/GCP/Azure destructive ops, `terraform destroy` (via packs) |
+
+### If a Command Is Blocked
+
+```bash
+# Understand why it was blocked
+dcg explain "git reset --hard"
+```
+
+DCG will explain the rule and suggest safer alternatives. See [.claude/rules/destructive-command-guard.md](.claude/rules/destructive-command-guard.md) for full configuration.
+
+## Git Worktrees (Parallel Agent Work)
+
+This template supports [git worktrees](https://git-scm.com/docs/git-worktree) for running multiple Claude Code agents in parallel on the same repository. Each agent works in its own worktree, avoiding file conflicts.
+
+### Why Worktrees?
+
+When Claude Code spawns parallel sub-agents (e.g., one building the API while another builds the UI), they need isolated working directories. Git worktrees provide this without cloning the repo multiple times — each worktree shares the same `.git` history but has its own checked-out files.
+
+### Creating a Worktree
+
+```bash
+# Create a worktree for a specific task
+git worktree add ../my-project-task-a feature/task-a
+
+# Create a worktree on a new branch
+git worktree add -b feature/task-b ../my-project-task-b main
+
+# List active worktrees
+git worktree list
+
+# Remove a worktree when done
+git worktree remove ../my-project-task-a
+```
+
+### Bash Worktree Hook
+
+A pre-tool-use hook at `.claude/hooks/bash-worktree-fix.sh` automatically detects when Claude Code is running inside a worktree and adjusts Bash commands to execute in the correct worktree root. This prevents commands from accidentally running in the main repository directory.
+
+To enable the hook and default permissions:
+
+1. Copy the example settings if `.claude/settings.json` does not exist:
+```bash
+cp -n .claude/settings.json.example .claude/settings.json
+```
+2. If `.claude/settings.json` already exists, you will need to manually merge the relevant `hooks` configuration from `.claude/settings.json.example` to preserve your existing settings.
+
+Or add the hook manually to your `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "pre-tool-use": {
+      "Bash": {
+        "enabled": true,
+        "script": ".claude/hooks/bash-worktree-fix.sh",
+        "description": "Automatically prepends worktree path to Bash commands when in a worktree",
+        "apply_to_subagents": true
+      }
+    }
+  }
+}
+```
+
+### How Parallel Agents Use Worktrees
+
+The `parallel-worker` agent (`.claude/agents/parallel-worker.md`) coordinates this workflow:
+
+1. **Main agent** creates worktrees and assigns file scopes to sub-agents
+2. **Sub-agents** work independently in their own worktrees — no file conflicts
+3. **Main agent** consolidates results and cleans up worktrees
+
+Each sub-agent commits only its assigned files, and commits are serialized in dependency order. See `AGENTS.md` for the full parallel agent rules and commit discipline.
+
+### Cleanup
+
+```bash
+# List worktrees
+git worktree list
+
+# Remove finished worktrees
+git worktree remove ../my-project-task-a
+git worktree remove ../my-project-task-b
+
+# Prune stale worktree references
+git worktree prune
+```
+
 ## Tips for Working with Claude Code
 
 1. **Be specific about behavior** — "Show a loading spinner while saving" is better than "add loading state"
 2. **Describe the user experience** — "When the user clicks Save, disable the button and show 'Saving...'"
 3. **Ask for explanations** — "Explain what this component does" helps you understand and review
 4. **Iterate incrementally** — Build features in small steps, reviewing each one
-5. **Use the PM system** — For anything beyond a quick fix, create a PRD first
+5. **Use OpenSpec + Beads** — For anything beyond a quick fix, start a new change and track tasks
 
 ## Project Structure
 
@@ -211,7 +344,7 @@ Claude Code understands this structure and will place files appropriately:
 ```
 src/
 ├── components/      # Reusable UI pieces
-├── composables/     # Shared logic (hooks)
+├── composables/      # Shared logic (Vue Composables)
 ├── firebase/        # Firebase helpers (auth, database, storage)
 ├── router/          # Page routes
 ├── stores/          # App state (Pinia)
@@ -233,9 +366,9 @@ This template includes pre-configured rules (in `.claude/rules/`) that guide how
 |------|--------------|----------------|
 | **Data Models** | Claude Code references `.claude/rules/firebase-data-models.md` before any database changes | Prevents schema drift and ensures type safety |
 | **Environment Variables** | Secrets go in Google Secret Manager, not code | Keeps credentials secure and deployment-ready |
-| **Branch Operations** | Every epic gets its own branch from main | Isolates work, enables easy rollback |
-| **Naming Conventions** | Files, commits, and branches follow consistent patterns | Makes the codebase navigable and predictable |
-| **Agent Coordination** | When multiple agents work in parallel, they follow file-level coordination rules | Prevents conflicts and merge issues |
+| **Security Scanning** | Mandatory security scans before commits and deployments | Catches vulnerabilities early |
+| **Destructive Command Guard** | DCG hook blocks dangerous commands before execution | Prevents accidental data loss |
+| **Linting** | ESLint with TypeScript and Vue support | Consistent code quality |
 
 ### You Don't Need to Memorize These
 
@@ -282,11 +415,11 @@ npm run deploy:hosting
 
 ### What Gets Deployed
 
-| Command | Builds App | Deploys Hosting | Deploys Firestore Rules |
-|---------|------------|-----------------|-------------------------|
-| `npm run deploy` | Yes | Yes | Yes |
-| `npm run deploy:rules` | No | No | Yes |
-| `npm run deploy:hosting` | No | Yes | No |
+| Command | Builds App | Deploys Hosting | Deploys Firestore Rules | Deploys Storage Rules |
+|---------|------------|-----------------|-------------------------|-----------------------|
+| `npm run deploy` | Yes | Yes | Yes | Yes |
+| `npm run deploy:rules` | No | No | Yes | No |
+| `npm run deploy:hosting` | Yes | Yes | No | No |
 
 ### Important: Deploy Security Rules
 
