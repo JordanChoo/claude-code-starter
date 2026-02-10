@@ -67,7 +67,7 @@ describe('Auth Store', () => {
         callback(mockUser)
         return vi.fn()
       })
-      vi.mocked(getDocument).mockResolvedValue({ id: 'test-uid', email: 'test@example.com' })
+      vi.mocked(getDocument).mockResolvedValue({ id: 'test-uid', email: 'test@example.com' } as any)
 
       const store = useAuthStore()
       store.init()
@@ -113,7 +113,7 @@ describe('Auth Store', () => {
         callback(mockUser)
         return vi.fn()
       })
-      vi.mocked(getDocument).mockResolvedValue({ id: 'existing-uid' })
+      vi.mocked(getDocument).mockResolvedValue({ id: 'existing-uid' } as any)
 
       const store = useAuthStore()
       store.init()
@@ -210,6 +210,8 @@ describe('Auth Store', () => {
       { code: 'auth/email-already-in-use', expected: 'This email address is already in use.' },
       { code: 'auth/weak-password', expected: 'Password should be at least 6 characters.' },
       { code: 'auth/operation-not-allowed', expected: 'Authentication method not enabled. Please contact support.' },
+      { code: 'auth/too-many-requests', expected: 'Too many failed attempts. Please try again later.' },
+      { code: 'auth/invalid-credential', expected: 'Invalid email or password. Please try again.' },
       { code: 'auth/popup-closed-by-user', expected: 'Google sign-in was cancelled.' },
       { code: 'auth/network-request-failed', expected: 'Network error. Please check your internet connection.' }
     ]

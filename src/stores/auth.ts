@@ -20,6 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(true)
   const error = ref<string | null>(null)
 
+  let _initialized = false
   let _authReadyResolve: (() => void) | null = null
   const _authReady = new Promise<void>((resolve) => {
     _authReadyResolve = resolve
@@ -47,6 +48,10 @@ export const useAuthStore = defineStore('auth', () => {
           return 'Authentication method not enabled. Please contact support.'
         case 'auth/popup-closed-by-user':
           return 'Google sign-in was cancelled.'
+        case 'auth/too-many-requests':
+          return 'Too many failed attempts. Please try again later.'
+        case 'auth/invalid-credential':
+          return 'Invalid email or password. Please try again.'
         case 'auth/network-request-failed':
           return 'Network error. Please check your internet connection.'
         default:
@@ -60,7 +65,7 @@ export const useAuthStore = defineStore('auth', () => {
     const existing = await getDocument('users', firebaseUser.uid)
     if (!existing) {
       await setDocument('users', firebaseUser.uid, {
-        email: firebaseUser.email,
+        email: firebaseUser.email!,
         displayName: firebaseUser.displayName || null,
         photoURL: firebaseUser.photoURL || null,
         createdAt: serverTimestamp(),
@@ -70,6 +75,8 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function init() {
+    if (_initialized) return
+    _initialized = true
     onAuthChange(async (firebaseUser) => {
       user.value = firebaseUser
       if (firebaseUser) {
@@ -81,6 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
       loading.value = false
       _authReadyResolve?.()
+      _authReadyResolve = null
     })
   }
 
