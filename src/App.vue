@@ -2,6 +2,7 @@
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import ErrorBoundary from '@/components/ErrorBoundary.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -47,14 +48,16 @@ async function handleLogout() {
       </div>
     </nav>
     <main>
-      <template v-if="!authStore.loading">
-        <component :is="route.meta.layout === 'none' ? 'div' : DefaultLayout">
-          <router-view />
-        </component>
-      </template>
-      <div v-else class="flex justify-center items-center py-20">
-        <span class="text-gray-400">Loading...</span>
-      </div>
+      <ErrorBoundary>
+        <template v-if="!authStore.loading">
+          <component :is="route.meta.layout === 'none' ? 'div' : DefaultLayout">
+            <router-view />
+          </component>
+        </template>
+        <div v-else class="flex justify-center items-center py-20">
+          <span class="text-gray-400">Loading...</span>
+        </div>
+      </ErrorBoundary>
     </main>
   </div>
 </template>
