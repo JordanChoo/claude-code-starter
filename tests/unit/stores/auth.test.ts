@@ -316,6 +316,49 @@ describe('Auth Store', () => {
       await store.waitForAuth()
       expect(store.loading).toBe(false)
     })
+
+    it('waitForAuth rejects after timeout when auth callback never fires', async () => {
+      // onAuthChange never calls its callback
+      vi.mocked(onAuthChange).mockImplementation(() => {
+        return vi.fn()
+      })
+
+      const store = useAuthStore()
+      store.init()
+
+      await expect(store.waitForAuth(50)).rejects.toThrow('Auth initialization timed out')
+    })
+
+    it('waitForAuth uses custom timeout value', async () => {
+      vi.mocked(onAuthChange).mockImplementation(() => {
+        return vi.fn()
+      })
+
+      const store = useAuthStore()
+      store.init()
+
+      const start = Date.now()
+      await expect(store.waitForAuth(100)).rejects.toThrow('Auth initialization timed out')
+      const elapsed = Date.now() - start
+
+      expect(elapsed).toBeGreaterThanOrEqual(90)
+      expect(elapsed).toBeLessThan(500)
+    })
+
+    it('waitForAuth resolves before timeout when auth callback fires in time', async () => {
+      vi.mocked(onAuthChange).mockImplementation((callback: any) => {
+        // Fire the callback after a short delay (well before the timeout)
+        setTimeout(() => callback(null), 20)
+        return vi.fn()
+      })
+
+      const store = useAuthStore()
+      store.init()
+
+      // Should resolve without throwing, even though timeout is set
+      await expect(store.waitForAuth(5000)).resolves.toBeUndefined()
+      expect(store.loading).toBe(false)
+    })
   })
 
   describe('ensureUserDocument error handling', () => {

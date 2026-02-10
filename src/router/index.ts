@@ -39,7 +39,15 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
-  await authStore.waitForAuth()
+  try {
+    await authStore.waitForAuth()
+  } catch {
+    // Auth timed out — redirect to login if auth-required, otherwise continue
+    if (to.meta.requiresAuth) {
+      return { name: 'login', query: { redirect: to.fullPath } }
+    }
+    return
+  }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }

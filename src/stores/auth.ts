@@ -115,8 +115,13 @@ export const useAuthStore = defineStore('auth', () => {
     })
   }
 
-  function waitForAuth() {
-    return _authReady
+  function waitForAuth(timeoutMs = 10000): Promise<void> {
+    return Promise.race([
+      _authReady,
+      new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error('Auth initialization timed out')), timeoutMs)
+      )
+    ])
   }
 
   async function login(email: string, password: string) {
