@@ -382,6 +382,10 @@ When changing existing models:
 
 ### Migration Script Template
 
+> **Note:** The `migrations/` directory does not yet exist in this project. Create it and
+> a runner script before writing your first migration. For simple field additions,
+> consider using the Firebase console or a one-off script instead.
+
 ```typescript
 // migrations/YYYYMMDD_description.ts
 import { db } from '@/firebase'
@@ -401,7 +405,7 @@ export async function migrate() {
 
 ### Migration Checklist
 
-1. [ ] Create migration script in `migrations/` directory
+1. [ ] Create `migrations/` directory if it doesn't exist, then add migration script
 2. [ ] Test migration on emulator first
 3. [ ] Back up production data before running
 4. [ ] Update this document with new schema

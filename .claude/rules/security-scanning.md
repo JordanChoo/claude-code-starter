@@ -26,13 +26,7 @@ Security scanning is REQUIRED before:
 Run the security scanning plugin:
 
 ```bash
-/security-scanning:security-audit
-```
-
-For comprehensive scanning:
-
-```bash
-/security-scanning:security-hardening --level comprehensive
+/security-scanning:security-sast
 ```
 
 ---
@@ -45,7 +39,7 @@ Follow this sequence for every commit:
 1. Complete code changes
          │
          ▼
-2. Run /security-scanning:security-audit
+2. Run /security-scanning:security-sast
          │
          ▼
 3. Review scan results
@@ -91,7 +85,7 @@ Security note: Medium-severity issue deferred (CSV injection).
 Mitigation: Server-side sanitization in place.
 Follow-up: Issue #XX created for additional client-side escaping.
 
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude <noreply@anthropic.com>
 EOF
 )"
 ```
@@ -104,7 +98,7 @@ EOF
 
 ```bash
 # 1. Run security scan
-/security-scanning:security-audit
+/security-scanning:security-sast
 
 # 2. If clean, close/archive the task
 ```
@@ -112,12 +106,24 @@ EOF
 ### Before Deployment
 
 ```bash
-# 1. Run comprehensive scan
-/security-scanning:security-hardening --level comprehensive
+# 1. Run security scan
+/security-scanning:security-sast
 
 # 2. If clean, proceed with deployment
 ./scripts/verify-env.sh && npm run build && firebase deploy
 ```
+
+### During Session Close
+
+The session close protocol (see AGENTS.md "Landing the Plane") MUST include a security scan:
+
+1. Complete all code changes
+2. Run `/security-scanning:security-sast`
+3. Fix any Critical/High issues
+4. Proceed with `git commit` → `bd sync` → `git push`
+
+> **Note:** Never skip the security scan during session close, even for "documentation-only" changes.
+> Configuration files and rule changes can introduce security issues too.
 
 ---
 
@@ -154,11 +160,11 @@ If you must commit without scanning (critical hotfix):
 
 ```bash
 # Standard scan before commit
-/security-scanning:security-audit
+/security-scanning:security-sast
 
-# Comprehensive scan before deploy
-/security-scanning:security-hardening --level comprehensive
+# Scan before deploy
+/security-scanning:security-sast
 
 # Check specific file or directory
-/security-scanning:security-audit --path src/auth/
+/security-scanning:security-sast --path src/auth/
 ```

@@ -166,6 +166,8 @@ firebase deploy --only storage
 firebase deploy
 ```
 
+> **Note:** `firebase deploy` (with no `--only` flag) deploys **all** configured Firebase services, including Hosting, Firestore Rules, and Storage Rules.
+
 ## Rollback Procedures
 
 ### Firebase Hosting

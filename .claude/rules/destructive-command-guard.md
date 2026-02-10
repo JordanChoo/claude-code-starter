@@ -18,6 +18,19 @@ This project requires [DCG](https://github.com/Dicklesworthstone/destructive_com
 curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/destructive_command_guard/master/install.sh?$(date +%s)" | bash -s -- --easy-mode
 ```
 
+### Version Pinning (Recommended)
+
+For reproducible installs, download and review the script first:
+
+```bash
+# Download, review, then install
+curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/destructive_command_guard/master/install.sh" -o /tmp/dcg-install.sh
+less /tmp/dcg-install.sh  # Review the script
+bash /tmp/dcg-install.sh --easy-mode
+```
+
+When a tagged release is available, prefer pinning to that version over `master`.
+
 Verify installation:
 ```bash
 dcg --version
@@ -76,6 +89,22 @@ commands = ["git push --force-with-lease origin main"]
 patterns = ["npm run build:.*"]
 ```
 
+### Project-Specific Allowlist
+
+The standard workflow requires deleting planning artifacts regularly. Add this to your allowlist:
+
+```toml
+[allowlist]
+patterns = [
+    "rm -rf openspec/changes/.*",    # Planning artifact cleanup (standard close workflow)
+]
+```
+
+**Why this is safe:**
+- `openspec/changes/` contains temporary planning artifacts only
+- Git history preserves all deleted files
+- This deletion is a required step in the standard close workflow (see AGENTS.md)
+
 ---
 
 ## When DCG Blocks a Command
@@ -98,6 +127,20 @@ DCG allows standard development commands:
 - `git stash`, `git stash pop`, `git stash list`
 - `git checkout -b <branch>` (new branch creation)
 - `grep "rm -rf"` (pattern matching in data, not execution)
+
+---
+
+## Settings Permissions and DCG
+
+`.claude/settings.local.json` permissions can undermine DCG protection:
+
+| Permission | Risk |
+|-----------|------|
+| `Bash(bash:*)` | Allows arbitrary script execution, bypassing all other restrictions |
+| `Bash(yes:*)` | Auto-confirms prompts that DCG relies on for user verification |
+| `Bash(curl:*)` | Allows unrestricted network requests |
+
+Periodically review your `.claude/settings.local.json` and remove overly broad permissions that are no longer needed.
 
 ---
 

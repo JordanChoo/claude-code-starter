@@ -71,11 +71,16 @@ jobs:
       - name: Start Firebase Emulators
         run: |
           firebase emulators:start --project demo-test &
-          # Wait for emulators to be ready
+          # Wait for Auth emulator
           for i in $(seq 1 30); do
             curl -s http://127.0.0.1:9099/ > /dev/null 2>&1 && break || sleep 1
           done
           curl -s http://127.0.0.1:9099/ || (echo "Auth emulator not ready" && exit 1)
+          # Wait for Firestore emulator
+          for i in $(seq 1 30); do
+            curl -s http://127.0.0.1:8080/ > /dev/null 2>&1 && break || sleep 1
+          done
+          curl -s http://127.0.0.1:8080/ || (echo "Firestore emulator not ready" && exit 1)
 
       - name: Run E2E tests
         run: npx playwright test --project=chromium

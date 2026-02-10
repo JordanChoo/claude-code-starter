@@ -10,7 +10,7 @@ Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for a
 
 ### Do NOT Use `bd edit`
 
-**WARNING:** `bd edit` opens an interactive editor (`$EDITOR`) which AI agents cannot use. It will hang indefinitely.
+**WARNING:** `bd edit` opens an interactive editor (`$EDITOR`) which Gemini CLI cannot use. It will hang indefinitely.
 
 Use `bd update` with flags instead:
 ```bash
@@ -25,7 +25,7 @@ bd update <id> --add-note "Session end: <context>"
 
 ### Non-Interactive Shell Commands
 
-**ALWAYS use force flags** with file operations to avoid hanging on `-i` alias prompts:
+**Prefer force flags** with file operations to avoid hanging on `-i` alias prompts:
 
 ```bash
 cp -f source dest           # NOT: cp source dest
@@ -34,6 +34,9 @@ rm -f file                  # NOT: rm file
 rm -rf directory            # NOT: rm -r directory
 cp -rf source dest          # NOT: cp -r source dest
 ```
+
+> **Note:** DCG may still block destructive commands on protected paths even with force flags.
+> See `.claude/rules/destructive-command-guard.md` for allowlisted exceptions.
 
 Other commands that may prompt:
 - `scp` — use `-o BatchMode=yes`
@@ -128,6 +131,8 @@ Beads auto-exports to JSONL with a **30-second debounce** after mutations. This 
 Hash-based IDs make conflicts rare, but if they occur:
 
 ```bash
+# WARNING: This discards ALL local beads changes in favor of remote.
+# Only use when you are certain the remote version is correct.
 git checkout --theirs .beads/issues.jsonl   # Accept remote version
 bd import -i .beads/issues.jsonl            # Re-import to rebuild DB
 ```
@@ -253,8 +258,9 @@ bd create "Found: <issue>" -t bug -p 2 --discovered-from <current-id> -d "## Des
 # Delete planning artifacts (git history preserves them)
 rm -rf openspec/changes/<name>
 
-# Close one or multiple beads at once
-bd close <id> --reason "Completed"
+# Commit cleanup and close issues
+git add -A
+git commit -m "chore: cleanup planning artifacts (bd-<epic-id>)"
 bd close <id1> <id2> <id3> --reason "Completed"
 
 # Sync and push
@@ -299,7 +305,7 @@ Types: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `perf`, `style`
 
 ## Parallel Agent Work Rules
 
-When launching multiple agents to work concurrently:
+When launching multiple Gemini CLI agents to work concurrently:
 
 ### Pre-Launch Checklist
 
@@ -309,8 +315,8 @@ When launching multiple agents to work concurrently:
 
 ### Per-Agent Rules
 
-- Each agent knows its bead ID and file scope
-- Each agent commits ONLY its own files
+- Each Gemini CLI agent knows its bead ID and file scope
+- Each Gemini CLI agent commits ONLY its own files
 - Each commit references the task bead ID (never epic ID)
 
 ### Commit Order
@@ -334,6 +340,10 @@ Even if agents finish simultaneously, commit in dependency order:
 # NEVER DO THIS — "wave commit" pattern
 git add -A && git commit -m "feat: everything (bd-<epic-id>)"
 ```
+
+**Exceptions:** `git add -A` is acceptable ONLY for:
+- Cleanup commits that delete planning artifacts after per-task commits are complete
+- Session-end metadata commits where all code changes were already committed per-task
 
 ---
 
@@ -559,7 +569,7 @@ bd compact --apply --id <id> --summary summary.txt   # Compact with summary
 
 ### Context Rot Prevention
 
-If the agent forgets about Beads mid-session:
+If Gemini CLI forgets about Beads mid-session:
 - **Kill sessions earlier** — One task per session for complex work
 - **Explicit reminders** — "Check `bd ready`" at session start
 - **Granular tasks** — Anything over ~2 minutes = its own bead

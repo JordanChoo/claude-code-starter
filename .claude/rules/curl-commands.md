@@ -4,6 +4,10 @@ Reference guide for cURL commands used in this project.
 
 **When to use cURL**: Use cURL for debugging, testing, and one-off operations. Use the Firebase SDK in application code for better error handling and type safety.
 
+> **WARNING:** All commands below use placeholder values (`YOUR_API_KEY`, `YOUR_PROJECT_ID`, etc.).
+> Always substitute with actual values from your `.env` file before executing.
+> See the [Environment Variables](#environment-variables) section for the complete mapping.
+
 ## Firebase REST API
 
 ### Authentication
@@ -191,6 +195,8 @@ Quick substitution:
 export $(grep -v '^#' .env | xargs)
 curl "...?key=$VITE_FIREBASE_API_KEY"
 ```
+
+> **Safety:** Never paste commands containing real credentials into shared channels, logs, or issue trackers.
 
 ## Common Options
 
