@@ -8,7 +8,7 @@ Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for a
 
 ### Do NOT Use `bd edit`
 
-**WARNING:** `bd edit` opens an interactive editor (`$EDITOR`) which Gemini CLI cannot use. It will hang indefinitely.
+**WARNING:** `bd edit` opens an interactive editor (`$EDITOR`) which Claude Code cannot use. It will hang indefinitely.
 
 Use `bd update` with flags instead:
 ```bash
@@ -301,7 +301,7 @@ Types: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `perf`, `style`
 
 ## Parallel Agent Work Rules
 
-When launching multiple Gemini CLI agents to work concurrently:
+When launching multiple Claude Code agents to work concurrently:
 
 ### Pre-Launch Checklist
 
@@ -311,8 +311,8 @@ When launching multiple Gemini CLI agents to work concurrently:
 
 ### Per-Agent Rules
 
-- Each Gemini CLI agent knows its bead ID and file scope
-- Each Gemini CLI agent commits ONLY its own files
+- Each Claude Code agent knows its bead ID and file scope
+- Each Claude Code agent commits ONLY its own files
 - Each commit references the task bead ID (never epic ID)
 
 ### Commit Order
@@ -565,7 +565,7 @@ bd compact --apply --id <id> --summary summary.txt   # Compact with summary
 
 ### Context Rot Prevention
 
-If Gemini CLI forgets about Beads mid-session:
+If Claude Code forgets about Beads mid-session:
 - **Kill sessions earlier** — One task per session for complex work
 - **Explicit reminders** — "Check `bd ready`" at session start
 - **Granular tasks** — Anything over ~2 minutes = its own bead

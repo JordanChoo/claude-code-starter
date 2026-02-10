@@ -219,7 +219,7 @@ Plugins enhance your existing workflow without changing it:
 1. **Install plugins once** (globally available across projects)
 2. **Start changes normally** with `/opsx:new` or `/opsx:ff`
 3. **Plugins work automatically** during implementation
-4. **Run security scans** before committing with `/security-scanning:security-audit`
+4. **Run security scans** before committing with `/security-scanning:security-sast`
 5. **Use orchestration** for complex features with `/full-stack-orchestration:full-stack-feature "feature name"`
 
 ## Destructive Command Guard (DCG)

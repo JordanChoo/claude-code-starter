@@ -1,4 +1,10 @@
 <script setup lang="ts">
+// Limitation: onErrorCaptured only catches errors from synchronous rendering,
+// watchers, and lifecycle hooks. It does NOT catch errors from async event
+// handlers, unhandled promise rejections, or setTimeout/setInterval callbacks.
+// Most real-world errors in this app (Firebase auth, Firestore operations) are
+// async and will bypass this component entirely. The global app.config.errorHandler
+// in main.ts handles those cases but only logs to console.
 import { ref, onErrorCaptured } from 'vue'
 
 const isDev = import.meta.env.DEV

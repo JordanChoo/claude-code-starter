@@ -31,6 +31,9 @@ export default defineConfig({
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // Single source of truth for E2E test environment variables.
+    // CI workflows (e.g., .github/workflows/test.yml) rely on these values
+    // rather than duplicating them — do not remove or override elsewhere.
     env: {
       VITE_USE_EMULATOR: 'true',
       VITE_FIREBASE_API_KEY: 'demo-api-key',

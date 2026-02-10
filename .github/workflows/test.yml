@@ -84,14 +84,6 @@ jobs:
 
       - name: Run E2E tests
         run: npx playwright test --project=chromium
-        env:
-          VITE_USE_EMULATOR: 'true'
-          VITE_FIREBASE_API_KEY: 'demo-api-key'
-          VITE_FIREBASE_AUTH_DOMAIN: 'demo-test.firebaseapp.com'
-          VITE_FIREBASE_PROJECT_ID: 'demo-test'
-          VITE_FIREBASE_STORAGE_BUCKET: 'demo-test.appspot.com'
-          VITE_FIREBASE_MESSAGING_SENDER_ID: '000000000000'
-          VITE_FIREBASE_APP_ID: '1:000000000000:web:0000000000000000'
 
       - name: Upload Playwright report
         if: failure()

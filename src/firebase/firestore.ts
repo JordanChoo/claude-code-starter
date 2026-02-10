@@ -12,7 +12,8 @@ import {
   orderBy,
   limit,
   type QueryConstraint,
-  type DocumentData
+  type DocumentData,
+  serverTimestamp
 } from 'firebase/firestore'
 import { db } from './index'
 import type { CollectionMap, CollectionName, WriteData } from '@/types/models'
@@ -47,7 +48,11 @@ export async function addDocument<K extends CollectionName>(
   collectionName: K,
   data: Omit<WriteData<CollectionMap[K]>, 'createdAt' | 'updatedAt'>
 ): Promise<string> {
-  const docRef = await addDoc(collection(db, collectionName), data as DocumentData)
+  const docRef = await addDoc(collection(db, collectionName), {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  } as DocumentData)
   return docRef.id
 }
 
@@ -57,7 +62,10 @@ export async function updateDocument<K extends CollectionName>(
   data: Partial<Omit<WriteData<CollectionMap[K]>, 'createdAt'>>
 ): Promise<void> {
   const docRef = doc(db, collectionName, documentId)
-  await updateDoc(docRef, data as DocumentData)
+  await updateDoc(docRef, {
+    ...data,
+    updatedAt: serverTimestamp()
+  } as DocumentData)
 }
 
 export async function deleteDocument<K extends CollectionName>(

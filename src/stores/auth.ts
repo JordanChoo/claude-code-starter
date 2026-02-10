@@ -23,7 +23,7 @@ export const useAuthStore = defineStore('auth', () => {
   let _initialized = false
   let _unsubscribeAuth: (() => void) | null = null
   let _authReadyResolve: (() => void) | null = null
-  const _authReady = new Promise<void>((resolve) => {
+  let _authReady = new Promise<void>((resolve) => {
     _authReadyResolve = resolve
   })
 
@@ -63,10 +63,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function ensureUserDocument(firebaseUser: User) {
+    if (!firebaseUser.email) {
+      console.warn('User has no email address, skipping document creation')
+      return
+    }
     const existing = await getDocument('users', firebaseUser.uid)
     if (!existing) {
       await setDocument('users', firebaseUser.uid, {
-        email: firebaseUser.email!,
+        email: firebaseUser.email,
         displayName: firebaseUser.displayName || null,
         photoURL: firebaseUser.photoURL || null,
         createdAt: serverTimestamp(),
@@ -97,6 +101,10 @@ export const useAuthStore = defineStore('auth', () => {
     _unsubscribeAuth?.()
     _unsubscribeAuth = null
     _initialized = false
+    loading.value = true
+    _authReady = new Promise<void>((resolve) => {
+      _authReadyResolve = resolve
+    })
   }
 
   function waitForAuth() {

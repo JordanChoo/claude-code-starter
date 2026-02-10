@@ -160,6 +160,18 @@ firebase deploy --only firestore:rules
 firebase deploy --only storage
 ```
 
+or use the npm script:
+
+```bash
+npm run deploy:storage-rules
+```
+
+### All Rules (Firestore + Storage)
+
+```bash
+npm run deploy:all-rules
+```
+
 ### All Firebase Services
 
 ```bash

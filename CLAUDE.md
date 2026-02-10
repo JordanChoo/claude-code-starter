@@ -64,7 +64,7 @@ Always run tests before committing:
 ## Security
 
 Always run security scan before committing:
-- `/security-scanning:security-audit`
+- `/security-scanning:security-sast`
 
 See [.claude/rules/security-scanning.md](.claude/rules/security-scanning.md) for full security workflow.
 

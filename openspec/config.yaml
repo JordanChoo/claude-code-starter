@@ -4,7 +4,7 @@ schema: spec-driven
 # TODO: Fill in your project-specific details
 # context: |
 #   Tech stack: TypeScript, Vue 3, Firebase, Tailwind CSS v4
-#   Package manager: pnpm
+#   Package manager: npm
 #   We use conventional commits
 #   Beads (bd) for issue tracking — every task needs a bead
 #   Quality gates: npm test, npm run lint, npm run build
