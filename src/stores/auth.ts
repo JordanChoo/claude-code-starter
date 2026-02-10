@@ -21,6 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
 
   let _initialized = false
+  let _unsubscribeAuth: (() => void) | null = null
   let _authReadyResolve: (() => void) | null = null
   const _authReady = new Promise<void>((resolve) => {
     _authReadyResolve = resolve
@@ -77,7 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
   function init() {
     if (_initialized) return
     _initialized = true
-    onAuthChange(async (firebaseUser) => {
+    _unsubscribeAuth = onAuthChange(async (firebaseUser) => {
       user.value = firebaseUser
       if (firebaseUser) {
         try {
@@ -90,6 +91,12 @@ export const useAuthStore = defineStore('auth', () => {
       _authReadyResolve?.()
       _authReadyResolve = null
     })
+  }
+
+  function dispose() {
+    _unsubscribeAuth?.()
+    _unsubscribeAuth = null
+    _initialized = false
   }
 
   function waitForAuth() {
@@ -156,6 +163,7 @@ export const useAuthStore = defineStore('auth', () => {
     userEmail,
     userId,
     init,
+    dispose,
     waitForAuth,
     login,
     register,
