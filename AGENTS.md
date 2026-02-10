@@ -20,7 +20,55 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 This project uses **Beads** (`bd`) for issue tracking and **OpenSpec** for planning.
 
-Run `bd onboard` if you haven't already this session.
+Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for auto-injection.
+
+---
+
+## Agent Warnings
+
+### Do NOT Use `bd edit`
+
+**WARNING:** `bd edit` opens an interactive editor (`$EDITOR`) which AI agents cannot use. It will hang indefinitely.
+
+Use `bd update` with flags instead:
+```bash
+bd update <id> --title "new title"
+bd update <id> --description "new description"
+bd update <id> --design "design notes"
+bd update <id> --notes "additional notes"
+bd update <id> --acceptance "acceptance criteria"
+bd update <id> --status in_progress
+bd update <id> --add-note "Session end: <context>"
+```
+
+### Non-Interactive Shell Commands
+
+**ALWAYS use force flags** with file operations to avoid hanging on `-i` alias prompts:
+
+```bash
+cp -f source dest           # NOT: cp source dest
+mv -f source dest           # NOT: mv source dest
+rm -f file                  # NOT: rm file
+rm -rf directory            # NOT: rm -r directory
+cp -rf source dest          # NOT: cp -r source dest
+```
+
+Other commands that may prompt:
+- `scp` — use `-o BatchMode=yes`
+- `ssh` — use `-o BatchMode=yes`
+- `apt-get` — use `-y` flag
+- `brew` — use `HOMEBREW_NO_AUTO_UPDATE=1`
+
+### Use `--json` for Structured Output
+
+Always prefer `--json` flag when processing `bd` output programmatically:
+```bash
+bd ready --json
+bd list --json
+bd show <id> --json
+bd stats --json
+bd compact --analyze --json
+```
 
 ---
 
@@ -41,12 +89,98 @@ Run `bd onboard` if you haven't already this session.
 
 ---
 
+## Priority Scale
+
+Beads uses numeric priorities 0-4 (or P0-P4). Do NOT use "high"/"medium"/"low".
+
+| Priority | Meaning | Use When |
+|----------|---------|----------|
+| P0 | Critical | Production down, data loss, security breach |
+| P1 | High | Blocks other work, must fix this session |
+| P2 | Medium | Standard work, default for most tasks |
+| P3 | Low | Nice to have, do when convenient |
+| P4 | Backlog | Someday/maybe, future consideration |
+
+```bash
+bd create "Fix auth bug" -t bug -p 0 -d "..."   # Critical
+bd create "Add feature" -t task -p 2 -d "..."    # Standard
+```
+
+---
+
+## Dependencies
+
+Use `bd dep` to express blocking relationships between issues:
+
+```bash
+bd dep add <issue> <depends-on>     # issue depends on depends-on
+bd blocked                          # Show all blocked issues
+bd show <id>                        # See blocking/blocked-by for an issue
+```
+
+Example:
+```bash
+bd create "Implement API" -t task -p 2 -d "..."       # → bd-abc
+bd create "Write API tests" -t task -p 2 -d "..."     # → bd-def
+bd dep add bd-def bd-abc            # Tests depend on API implementation
+```
+
+---
+
+## Sync and Debounce Mechanics
+
+Beads auto-exports to JSONL with a **30-second debounce** after mutations. This means:
+- Multiple changes within 30 seconds get batched into one JSONL flush
+- Without `bd sync`, changes may sit in the debounce window when you end your session
+- The user may think you pushed, but the JSONL is still dirty
+
+**Always run `bd sync` at the end of your session.** It forces an immediate:
+1. Export pending changes to JSONL (bypasses 30s debounce)
+2. Commit to git
+3. Pull from remote
+4. Import any remote updates
+5. Push to remote
+
+### Merge Conflicts in `.beads/issues.jsonl`
+
+Hash-based IDs make conflicts rare, but if they occur:
+
+```bash
+git checkout --theirs .beads/issues.jsonl   # Accept remote version
+bd import -i .beads/issues.jsonl            # Re-import to rebuild DB
+```
+
+Or for manual resolution: merge the file, then run `bd import`.
+
+### Test Database Isolation
+
+**Never pollute the production database with test issues.** Use `BEADS_DB` for manual testing:
+
+```bash
+BEADS_DB=/tmp/test.db bd create "Test issue" -p 1
+```
+
+---
+
+## Daemon Management
+
+The Beads daemon handles RPC communication and auto-sync. If you encounter daemon issues:
+
+```bash
+bd daemons list               # Show running daemons
+bd daemons health             # Check daemon health
+bd daemons killall            # Clean up stale sockets/processes
+```
+
+---
+
 ## Complete Workflow
 
 ### 1. Orient
 
 ```bash
 bd ready --json      # See unblocked, prioritized work
+bd stats --json      # Project overview (open/closed/blocked counts)
 ```
 
 Select highest priority ready issue OR continue in-progress work.
@@ -114,8 +248,8 @@ openspec/changes/<change-name>/specs/<capability>/spec.md
 | Field | Content | Purpose |
 |-------|---------|---------|
 | Description (`-d`) | Implementation steps, files, snippets, testing commands | What to do mechanically |
-| Design (in description) | Architecture context, relevant design decisions | Why we're doing it this way |
-| Notes (in description) | Spec references with paths, line numbers | Where to find more context |
+| Design (`--design`) | Architecture context, relevant design decisions | Why we're doing it this way |
+| Notes (`--notes`) | Spec references with paths, line numbers | Where to find more context |
 
 ### 5. Implement
 
@@ -137,8 +271,9 @@ bd create "Found: <issue>" -t bug -p 2 --discovered-from <current-id> -d "## Des
 # Delete planning artifacts (git history preserves them)
 rm -rf openspec/changes/<name>
 
-# Close the bead
+# Close one or multiple beads at once
 bd close <id> --reason "Completed"
+bd close <id1> <id2> <id3> --reason "Completed"
 
 # Sync and push
 bd sync && git push
@@ -158,16 +293,18 @@ No commit without an associated bead issue. No exceptions (except `bd sync` comm
 # 2. The bead is in_progress
 # 3. You reference the TASK bead ID (not epic ID)
 
-git commit -m "feat: add mobile nav component [bd-<task-id>]"
+git commit -m "feat: add mobile nav component (bd-<task-id>)"
 ```
 
 ### Commit Message Format
 
 ```
-<type>: <description> [bd-<task-id>]
+<type>: <description> (bd-<task-id>)
 ```
 
 Types: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `perf`, `style`
+
+**Use parentheses `(bd-xxx)`, not brackets.** This format enables `bd doctor` to detect orphaned issues by cross-referencing open issues against git history.
 
 ### What This Means in Practice
 
@@ -186,7 +323,7 @@ When launching multiple agents to work concurrently:
 
 1. **Create ALL beads FIRST** — Every task gets a `bd create` BEFORE any agent launches
 2. **Map files to tasks** — Ensure each agent has a non-overlapping set of files
-3. **Identify dependencies** — If Task B imports from Task A's output, they MUST be serialized
+3. **Identify dependencies** — If Task B imports from Task A's output, they MUST be serialized. Use `bd dep add` to express this.
 
 ### Per-Agent Rules
 
@@ -204,16 +341,16 @@ Even if agents finish simultaneously, commit in dependency order:
 2. bd create "Task B" → project-def
 3. bd create "Task C" → project-ghi
 4. Launch agents A, B, C (each knows bead ID + file scope)
-5. Agent A finishes → git add <A's files> && git commit -m "feat: ... [bd-project-abc]" → bd close abc
-6. Agent B finishes → git add <B's files> && git commit -m "feat: ... [bd-project-def]" → bd close def
-7. Agent C finishes → git add <C's files> && git commit -m "feat: ... [bd-project-ghi]" → bd close ghi
+5. Agent A finishes → git add <A's files> && git commit -m "feat: ... (bd-project-abc)" → bd close abc
+6. Agent B finishes → git add <B's files> && git commit -m "feat: ... (bd-project-def)" → bd close def
+7. Agent C finishes → git add <C's files> && git commit -m "feat: ... (bd-project-ghi)" → bd close ghi
 ```
 
 ### Forbidden
 
 ```bash
 # NEVER DO THIS — "wave commit" pattern
-git add -A && git commit -m "feat: everything [bd-<epic-id>]"
+git add -A && git commit -m "feat: everything (bd-<epic-id>)"
 ```
 
 ---
@@ -259,7 +396,7 @@ bd create "<change-name>" -t epic -p 1 -l "openspec:<change-name>" -d "..."
 # Push planning to main
 bd sync
 git add -A
-git commit -m "plan: <change-name> [bd-<epic-id>]"
+git commit -m "plan: <change-name> (bd-<epic-id>)"
 git push
 
 # ═══════════════════════════════════════════════════════
@@ -274,7 +411,7 @@ bd create "<task 2>" -t task -p 2 -l "openspec:<change-name>" -d "..."
 # Implement each task
 bd update <task-1-id> --status in_progress
 # ... write code ...
-bd sync && git add <files> && git commit -m "feat: <desc> [bd-<task-1-id>]"
+bd sync && git add <files> && git commit -m "feat: <desc> (bd-<task-1-id>)"
 bd close <task-1-id> --reason "Completed"
 
 # Repeat for each task...
@@ -284,7 +421,7 @@ bd close <task-1-id> --reason "Completed"
 # ═══════════════════════════════════════════════════════
 # Delete planning artifacts
 rm -rf openspec/changes/<change-name>
-bd sync && git add -A && git commit -m "chore: cleanup planning artifacts [bd-<epic-id>]"
+bd sync && git add -A && git commit -m "chore: cleanup planning artifacts (bd-<epic-id>)"
 git push -u origin feature/<change-name>
 
 # Close epic
@@ -342,7 +479,7 @@ Delete any completed change directories: `rm -rf openspec/changes/<name>`
 ### 4. Update All Tracking
 
 ```bash
-bd close <id> --reason "Completed"                     # Finished work
+bd close <id1> <id2> --reason "Completed"             # Finished work (batch close)
 bd update <id> --status in_progress                    # Partially done (WIP)
 bd update <id> --add-note "Session end: <context>"     # Context for next session
 ```
@@ -352,7 +489,7 @@ bd update <id> --add-note "Session end: <context>"     # Context for next sessio
 ```bash
 bd sync
 git add -A
-git commit -m "chore: session end - <summary> [bd-<id>]"
+git commit -m "chore: session end - <summary> (bd-<id>)"
 git push
 git status  # MUST show "up to date with origin"
 ```
@@ -362,11 +499,18 @@ git status  # MUST show "up to date with origin"
 ```bash
 git stash clear                                  # If appropriate
 git branch -d feature/<name>                     # Merged branches
-git fetch --prune                                # Stale remote refs
+git remote prune origin                          # Stale remote refs
 ```
 
 ### 7. Hand Off Context
 
+Provide a copy-pasteable prompt for the next session:
+
+```
+Continue work on bd-<id>: <issue title>. <Brief context about what's been done and what's next>.
+```
+
+Also include:
 ```
 ## Next Session Context
 - Current epic: <id and name>
@@ -380,7 +524,21 @@ git fetch --prune                                # Stale remote refs
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing — that leaves work stranded locally
 - NEVER say "ready to push when you are" — YOU must push
+- If `git push` fails, resolve the issue and retry until it succeeds
 - ALWAYS run `bd sync` before committing
+
+---
+
+## Checking GitHub Issues and PRs
+
+Use `gh` CLI for GitHub operations, not browser tools:
+
+```bash
+gh issue list --limit 30       # List open issues
+gh pr list --limit 30          # List open PRs
+gh issue view <number>         # View specific issue
+gh pr view <number>            # View specific PR
+```
 
 ---
 
@@ -404,13 +562,16 @@ The following commands exist but are intentionally disabled in this workflow. Be
 
 ```bash
 bd doctor              # Health check
-bd doctor --fix        # Auto-fix issues
+bd doctor --fix        # Auto-fix issues (gitignore, daemon, sync divergence)
+bd stats --json        # Project statistics
 ```
 
 ### Compacting Old Issues
 
+Compaction targets closed issues 30+ days old to keep the database lean:
+
 ```bash
-bd compact --analyze --json    # Find compaction candidates (closed 30+ days)
+bd compact --analyze --json    # Find compaction candidates
 bd compact --apply --id <id> --summary summary.txt   # Compact with summary
 ```
 

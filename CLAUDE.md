@@ -106,8 +106,8 @@ bd create "Title" -t task -p 2 -d "## Requirements
 Every git commit MUST reference a bead ID. Every task gets its own commit.
 
 ```bash
-# Commit format
-git commit -m "feat: description [bd-<task-id>]"
+# Commit format — use parentheses (enables bd doctor orphan detection)
+git commit -m "feat: description (bd-<task-id>)"
 ```
 
 See AGENTS.md for detailed rules on parallel agents, feature branches, and commit discipline.
