@@ -25,17 +25,20 @@ bd update <id> --add-note "Session end: <context>"
 
 ### Non-Interactive Shell Commands
 
-**Prefer force flags** with file operations to avoid hanging on `-i` alias prompts:
+Some shell environments alias `cp`, `mv`, and `rm` to their `-i` (interactive) variants,
+which causes commands to hang waiting for confirmation. **Use force flags specifically to
+bypass these interactive alias prompts**, not as a blanket rule for all file operations:
 
 ```bash
-cp -f source dest           # NOT: cp source dest
-mv -f source dest           # NOT: mv source dest
-rm -f file                  # NOT: rm file
-rm -rf directory            # NOT: rm -r directory
-cp -rf source dest          # NOT: cp -r source dest
+cp -f source dest           # Avoids hanging if cp is aliased to cp -i
+mv -f source dest           # Avoids hanging if mv is aliased to mv -i
+rm -f file                  # Avoids hanging if rm is aliased to rm -i
+rm -rf directory            # Avoids hanging if rm is aliased to rm -i
+cp -rf source dest          # Avoids hanging if cp is aliased to cp -i
 ```
 
-> **Note:** DCG may still block destructive commands on protected paths even with force flags.
+> **WARNING:** Force flags do NOT override DCG protection. DCG may still block destructive
+> commands on protected paths (e.g., `rm -rf ./src`) even with `-f`. This is intentional.
 > See `.claude/rules/destructive-command-guard.md` for allowlisted exceptions.
 
 Other commands that may prompt:
