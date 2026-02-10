@@ -20,7 +20,7 @@ service cloud.firestore {
     }
 
     function validDisplayName(name) {
-      return name == null || (name.size() <= 100 && name.trim() == name);
+      return name == null || (name.size() > 0 && name.size() <= 100 && name.trim() == name);
     }
 
     function validPhotoURL(url) {
@@ -31,19 +31,19 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId);
 
-      allow create: if isOwner(userId)
-        && validEmail(request.resource.data.email)
+      allow create: if request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
-        && validTimestamp('createdAt')
-        && validTimestamp('updatedAt');
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
 
       allow update: if isOwner(userId)
+        && (!(request.resource.data.email is string) || request.resource.data.email == resource.data.email)
+        && (!(request.resource.data.createdAt is timestamp) || request.resource.data.createdAt == resource.data.createdAt)
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
-        && validTimestamp('updatedAt')
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.email == resource.data.email;
+        && request.resource.data.updatedAt == request.time;
 
       allow delete: if isOwner(userId);
     }
