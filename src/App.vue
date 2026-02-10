@@ -3,10 +3,12 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
+import { useConnectionState } from '@/composables/useConnectionState'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const { isOnline } = useConnectionState()
 
 async function handleLogout() {
   try {
@@ -20,6 +22,9 @@ async function handleLogout() {
 
 <template>
   <div class="min-h-screen bg-gray-50">
+    <div v-if="!isOnline" class="bg-amber-500 text-white text-center py-2 text-sm font-medium">
+      You are offline. Some features may be unavailable.
+    </div>
     <nav class="bg-white shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">

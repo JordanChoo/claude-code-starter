@@ -1,6 +1,12 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  connectFirestoreEmulator
+} from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
 
 // Validate required environment variables at startup
@@ -33,7 +39,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+export const db = import.meta.env.VITE_USE_EMULATOR === 'true'
+  ? getFirestore(app)
+  : initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    })
 export const storage = getStorage(app)
 
 // Connect to Firebase Emulators when flag is set
