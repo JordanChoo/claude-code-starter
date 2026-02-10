@@ -17,7 +17,9 @@ interface FirebaseAuthError extends Error {
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-  const loading = ref(true)
+  const initializing = ref(true)
+  const actionLoading = ref(false)
+  const loading = computed(() => initializing.value || actionLoading.value)
   const error = ref<string | null>(null)
 
   let _initialized = false
@@ -91,7 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
           console.error('Failed to ensure user document:', e)
         }
       }
-      loading.value = false
+      initializing.value = false
       _authReadyResolve?.()
       _authReadyResolve = null
     })
@@ -101,7 +103,8 @@ export const useAuthStore = defineStore('auth', () => {
     _unsubscribeAuth?.()
     _unsubscribeAuth = null
     _initialized = false
-    loading.value = true
+    initializing.value = true
+    actionLoading.value = false
     _authReady = new Promise<void>((resolve) => {
       _authReadyResolve = resolve
     })
@@ -114,57 +117,59 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(email: string, password: string) {
     try {
       error.value = null
-      loading.value = true
+      actionLoading.value = true
       await signIn(email, password)
     } catch (e) {
       error.value = mapFirebaseAuthError(e as Error)
       throw e
     } finally {
-      loading.value = false
+      actionLoading.value = false
     }
   }
 
   async function register(email: string, password: string) {
     try {
       error.value = null
-      loading.value = true
+      actionLoading.value = true
       await signUp(email, password)
     } catch (e) {
       error.value = mapFirebaseAuthError(e as Error)
       throw e
     } finally {
-      loading.value = false
+      actionLoading.value = false
     }
   }
 
   async function loginWithGoogle() {
     try {
       error.value = null
-      loading.value = true
+      actionLoading.value = true
       await signInWithGoogle()
     } catch (e) {
       error.value = mapFirebaseAuthError(e as Error)
       throw e
     } finally {
-      loading.value = false
+      actionLoading.value = false
     }
   }
 
   async function logout() {
     try {
       error.value = null
-      loading.value = true
+      actionLoading.value = true
       await signOut()
     } catch (e) {
       error.value = mapFirebaseAuthError(e as Error)
       throw e
     } finally {
-      loading.value = false
+      actionLoading.value = false
     }
   }
 
   return {
     user,
+    initializing,
+    actionLoading,
     loading,
     error,
     isAuthenticated,
