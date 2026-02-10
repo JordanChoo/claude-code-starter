@@ -39,8 +39,8 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
 
       allow update: if isOwner(userId)
-        && (!(request.resource.data.email is string) || request.resource.data.email == resource.data.email)
-        && (!(request.resource.data.createdAt is timestamp) || request.resource.data.createdAt == resource.data.createdAt)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.email == resource.data.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
         && request.resource.data.updatedAt == request.time;

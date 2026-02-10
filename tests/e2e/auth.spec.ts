@@ -51,7 +51,7 @@ test.describe('Authentication Flow', () => {
     await page.getByRole('button', { name: 'Sign in' }).click()
 
     // 9. Should redirect back to dashboard (redirect query param from step 7)
-    await expect(page).toHaveURL(/\/(dashboard)?/)
+    await expect(page).toHaveURL('/dashboard')
 
     // 10. Confirm dashboard access
     await page.goto('/dashboard')

@@ -77,6 +77,7 @@ async function handleGoogleLogin() {
               v-model="email"
               type="email"
               required
+              autocomplete="email"
               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -91,6 +92,7 @@ async function handleGoogleLogin() {
               type="password"
               required
               minlength="6"
+              :autocomplete="isLogin ? 'current-password' : 'new-password'"
               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
