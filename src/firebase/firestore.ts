@@ -15,57 +15,66 @@ import {
   type DocumentData
 } from 'firebase/firestore'
 import { db } from './index'
+import type { CollectionMap, CollectionName, WriteData } from '@/types/models'
 
-export async function getDocument<T = DocumentData>(
-  collectionName: string,
+/**
+ * Get a single document by ID.
+ * Returns the document data with `id` injected from the document reference (not stored in Firestore).
+ */
+export async function getDocument<K extends CollectionName>(
+  collectionName: K,
   documentId: string
-): Promise<T | null> {
+): Promise<CollectionMap[K] | null> {
   const docRef = doc(db, collectionName, documentId)
   const docSnap = await getDoc(docRef)
-  return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as T) : null
+  return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as CollectionMap[K]) : null
 }
 
-export async function getDocuments<T = DocumentData>(
-  collectionName: string,
+/**
+ * Get multiple documents matching query constraints.
+ * Returns documents with `id` injected from each document reference (not stored in Firestore).
+ */
+export async function getDocuments<K extends CollectionName>(
+  collectionName: K,
   ...queryConstraints: QueryConstraint[]
-): Promise<Array<T & { id: string }>> {
+): Promise<Array<CollectionMap[K]>> {
   const q = query(collection(db, collectionName), ...queryConstraints)
   const querySnapshot = await getDocs(q)
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T & { id: string }))
+  return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() } as CollectionMap[K]))
 }
 
-export async function addDocument<T extends DocumentData>(
-  collectionName: string,
-  data: T
+export async function addDocument<K extends CollectionName>(
+  collectionName: K,
+  data: Omit<WriteData<CollectionMap[K]>, 'createdAt' | 'updatedAt'>
 ): Promise<string> {
-  const docRef = await addDoc(collection(db, collectionName), data)
+  const docRef = await addDoc(collection(db, collectionName), data as DocumentData)
   return docRef.id
 }
 
-export async function updateDocument(
-  collectionName: string,
+export async function updateDocument<K extends CollectionName>(
+  collectionName: K,
   documentId: string,
-  data: Partial<DocumentData>
+  data: Partial<Omit<WriteData<CollectionMap[K]>, 'createdAt'>>
 ): Promise<void> {
   const docRef = doc(db, collectionName, documentId)
-  await updateDoc(docRef, data)
+  await updateDoc(docRef, data as DocumentData)
 }
 
-export async function deleteDocument(
-  collectionName: string,
+export async function deleteDocument<K extends CollectionName>(
+  collectionName: K,
   documentId: string
 ): Promise<void> {
   const docRef = doc(db, collectionName, documentId)
   await deleteDoc(docRef)
 }
 
-export async function setDocument(
-  collectionName: string,
+export async function setDocument<K extends CollectionName>(
+  collectionName: K,
   documentId: string,
-  data: DocumentData
+  data: Omit<WriteData<CollectionMap[K]>, 'id'>
 ): Promise<void> {
   const docRef = doc(db, collectionName, documentId)
-  await setDoc(docRef, data)
+  await setDoc(docRef, data as DocumentData)
 }
 
 export { where, orderBy, limit }
