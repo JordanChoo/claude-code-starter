@@ -141,11 +141,11 @@ interface User extends BaseDocument {
 | Field | Validation Rules |
 |-------|-----------------|
 | `id` | Must be non-empty string; must match authenticated user's UID |
-| `email` | Must be valid email format; max 320 characters |
-| `displayName` | Max 100 characters; no leading/trailing whitespace; alphanumeric and spaces only |
+| `email` | Must match auth token email on create; immutable after creation (note: `validEmail` helper is defined but not called in rules) |
+| `displayName` | Null allowed; when provided, min 1 and max 100 characters; no leading/trailing whitespace |
 | `photoURL` | Must be valid URL (https only); max 2048 characters |
 | `createdAt` | Immutable after creation; must be server timestamp |
-| `updatedAt` | Must be server timestamp; cannot be in future |
+| `updatedAt` | Must equal server timestamp (`request.time`) on every write |
 
 ---
 
@@ -207,8 +207,8 @@ All documents MUST include:
 | Collection | Field | Type | Required | Constraints |
 |------------|-------|------|----------|-------------|
 | users | id | string | Yes | Matches Firebase Auth UID |
-| users | email | string | Yes | Valid email format, max 320 chars |
-| users | displayName | string | No | Max 100 chars, trimmed |
+| users | email | string | Yes | Must match auth token email; immutable after creation |
+| users | displayName | string | No | Null allowed; min 1, max 100 chars; no leading/trailing whitespace |
 | users | photoURL | string | No | Valid HTTPS URL, max 2048 chars |
 | users | createdAt | Timestamp | Yes | Server timestamp, immutable |
 | users | updatedAt | Timestamp | Yes | Server timestamp |
@@ -421,7 +421,11 @@ All data model changes MUST be logged here.
 
 ### [Unreleased]
 
-<!-- Add pending changes here before deployment -->
+- **Security Rules Documentation Sync**
+  - Fixed `email` property rule: was "valid email format; max 320 chars", now accurately documents that rules enforce matching auth token email on create and immutability on update (`validEmail` helper is defined but not called)
+  - Fixed `displayName` property rule: removed incorrect "alphanumeric and spaces only" constraint, added min 1 character requirement to match actual `validDisplayName` function
+  - Fixed `updatedAt` property rule: clarified must equal `request.time` (was "cannot be in future")
+  - Updated Collection-Specific Constraints table to match corrected property rules
 
 ### 2025-01-16
 
@@ -474,7 +478,7 @@ service cloud.firestore {
     }
 
     function validDisplayName(name) {
-      return name == null || (name.size() <= 100 && name.trim() == name);
+      return name == null || (name.size() > 0 && name.size() <= 100 && name.trim() == name);
     }
 
     function validPhotoURL(url) {
@@ -485,24 +489,27 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId);
 
-      allow create: if isOwner(userId)
-        && validEmail(request.resource.data.email)
+      allow create: if request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
-        && validTimestamp('createdAt')
-        && validTimestamp('updatedAt');
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
 
       allow update: if isOwner(userId)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.email == resource.data.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
-        && validTimestamp('updatedAt')
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.email == resource.data.email;
+        && request.resource.data.updatedAt == request.time;
 
       allow delete: if isOwner(userId);
     }
 
-    // Add collection rules here as models are added
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
 ```
