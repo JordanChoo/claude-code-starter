@@ -1,7 +1,5 @@
 # Agent Instructions
 
-This project uses **Beads** (`bd`) for issue tracking and **OpenSpec** for planning.
-
 Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for auto-injection.
 
 ---
@@ -60,20 +58,15 @@ bd compact --analyze --json
 
 ---
 
-## When to Use Beads vs OpenSpec
+## When to Use OpenSpec
 
-| Situation | Tool | Action |
-|-----------|------|--------|
-| New feature/capability | Both | `bd create` epic, then `/opsx:ff` to plan |
-| Planning complete, ready to build | Both | Convert tasks to beads, implement directly |
-| Bug fix, small task, tech debt | Beads only | `bd create` directly, implement |
-| Discovered issue during work | Beads only | `bd create "Found: <issue>" -t bug --discovered-from <current-id>` |
-| Tracking what's ready | Beads | `bd ready` |
-| Work complete | Beads | Clean up artifacts, `bd close <id> --reason "Completed"` |
-| Need to think through a problem | OpenSpec | `/opsx:explore` |
-| Need structured planning | OpenSpec | `/opsx:ff <name>` or `/opsx:new <name>` |
+Skip OpenSpec for work you can describe in a single bead description. Use OpenSpec when the work needs structured thinking — multiple capabilities, architectural decisions, or complex requirements.
 
-**Rule of thumb:** If you can describe the work in a single bead description, skip OpenSpec. If the work needs structured thinking (multiple capabilities, architectural decisions, complex requirements), use OpenSpec to plan first.
+| Situation | Action |
+|-----------|--------|
+| New feature/capability | `bd create` epic, then `/opsx:ff` to plan |
+| Need to think through a problem | `/opsx:explore` |
+| Need structured planning | `/opsx:ff <name>` or `/opsx:new <name>` |
 
 ---
 

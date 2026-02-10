@@ -31,38 +31,10 @@ When tackling any non-trivial task:
 
 ## Integrated Workflow
 
-This project uses two complementary tools:
-
 - **[Beads](https://github.com/steveyegge/beads/)** (`bd`) — Single system of record for ALL work. Git-backed issue tracking in `.beads/`.
 - **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** — Planning scratchpad for structured thinking. Artifacts in `openspec/` are temporary.
 
-**Beads answers:** "Where are we in building it?"
-**OpenSpec answers:** "What should we build?"
-
-### Quick Reference
-
-```bash
-# Beads (execution tracking)
-bd ready                                    # Find available work
-bd create "Title" -t task -p 2 -d "..."     # Create issue (MUST include -d)
-bd update <id> --status in_progress         # Claim work
-bd close <id> --reason "Completed"          # Complete work
-bd sync                                     # Sync with git
-
-# OpenSpec (planning — use only when needed)
-/opsx:explore                               # Think through a problem
-/opsx:ff <name>                             # Generate all planning artifacts
-/opsx:new <name>                            # Step-by-step artifact creation
-```
-
-### Workflow Summary
-
-1. **Pick work** — `bd ready` → `bd update <id> --status in_progress`
-2. **Plan (if needed)** — `/opsx:explore` or `/opsx:ff <name>`
-3. **Implement** — Write code directly, referencing artifacts
-4. **Close** — `rm -rf openspec/changes/<name>` → `bd close <id>` → `bd sync && git push`
-
-See `AGENTS.md` for the full detailed workflow.
+See `AGENTS.md` for the complete workflow, commit discipline, and session close protocol.
 
 ## Issue Tracking Rules
 
@@ -82,17 +54,6 @@ bd create "Title" -t task -p 2 -d "## Requirements
 ## Context
 - Relevant file paths, spec references"
 ```
-
-### One Commit Per Task, One Bead Per Task
-
-Every git commit MUST reference a bead ID. Every task gets its own commit.
-
-```bash
-# Commit format — use parentheses (enables bd doctor orphan detection)
-git commit -m "feat: description (bd-<task-id>)"
-```
-
-See AGENTS.md for detailed rules on parallel agents, feature branches, and commit discipline.
 
 ## Testing
 
