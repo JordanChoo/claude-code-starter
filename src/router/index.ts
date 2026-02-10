@@ -20,17 +20,24 @@ const router = createRouter({
       name: 'dashboard',
       component: () => import('@/views/DashboardView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue')
     }
   ]
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore()
+  await authStore.waitForAuth()
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
-  } else {
-    next()
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
+    return { name: 'dashboard' }
   }
 })
 

@@ -4,6 +4,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -21,16 +22,16 @@ export async function getDocument<T = DocumentData>(
 ): Promise<T | null> {
   const docRef = doc(db, collectionName, documentId)
   const docSnap = await getDoc(docRef)
-  return docSnap.exists() ? (docSnap.data() as T) : null
+  return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as T) : null
 }
 
 export async function getDocuments<T = DocumentData>(
   collectionName: string,
   ...queryConstraints: QueryConstraint[]
-): Promise<T[]> {
+): Promise<Array<T & { id: string }>> {
   const q = query(collection(db, collectionName), ...queryConstraints)
   const querySnapshot = await getDocs(q)
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T))
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T & { id: string }))
 }
 
 export async function addDocument<T extends DocumentData>(
@@ -56,6 +57,15 @@ export async function deleteDocument(
 ): Promise<void> {
   const docRef = doc(db, collectionName, documentId)
   await deleteDoc(docRef)
+}
+
+export async function setDocument(
+  collectionName: string,
+  documentId: string,
+  data: DocumentData
+): Promise<void> {
+  const docRef = doc(db, collectionName, documentId)
+  await setDoc(docRef, data)
 }
 
 export { where, orderBy, limit }

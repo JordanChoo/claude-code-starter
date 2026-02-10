@@ -31,5 +31,8 @@ export function onAuthChange(callback: (user: User | null) => void) {
 }
 
 export function getCurrentUser(): User | null {
+  // auth.currentUser can be null if the authentication state hasn't been fully initialized
+  // or propagated yet. For reliable initial user state or reactive updates,
+  // use onAuthStateChanged or the useAuthStore's init method.
   return auth.currentUser
 }

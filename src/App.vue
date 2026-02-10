@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
-onMounted(() => {
-  authStore.init()
-})
+async function handleLogout() {
+  await authStore.logout()
+  router.push('/')
+}
 </script>
 
 <template>
@@ -18,10 +20,13 @@ onMounted(() => {
             Vue Firebase Starter
           </router-link>
           <div class="flex items-center space-x-4">
-            <template v-if="authStore.isAuthenticated">
+            <template v-if="authStore.loading">
+              <span class="text-gray-400 text-sm">Loading...</span>
+            </template>
+            <template v-else-if="authStore.isAuthenticated">
               <span class="text-gray-600">{{ authStore.userEmail }}</span>
               <button
-                @click="authStore.logout"
+                @click="handleLogout"
                 class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
               >
                 Logout
@@ -40,7 +45,10 @@ onMounted(() => {
       </div>
     </nav>
     <main>
-      <router-view />
+      <router-view v-if="!authStore.loading" />
+      <div v-else class="flex justify-center items-center py-20">
+        <span class="text-gray-400">Loading...</span>
+      </div>
     </main>
   </div>
 </template>
