@@ -77,7 +77,10 @@ After completing all artifacts, summarize:
 - Change name and location
 - List of artifacts created with brief descriptions
 - What's ready: "All artifacts created! Ready for implementation."
-- Prompt: "Run `/opsx:apply` to start implementing."
+- Prompt: "Planning complete! Next steps:
+  1. Create a bead epic: `bd create \"<name>\" -t epic -p 1 -l \"openspec:<name>\" -d \"...\"`
+  2. Create task beads from tasks.md
+  3. Implement directly from the artifacts"
 
 **Artifact Creation Guidelines**
 

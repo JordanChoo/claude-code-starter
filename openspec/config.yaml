@@ -1,0 +1,19 @@
+schema: spec-driven
+
+# Project context (shown to AI when creating artifacts)
+# TODO: Fill in your project-specific details
+# context: |
+#   Tech stack: TypeScript, Vue 3, Firebase, Tailwind CSS v4
+#   Package manager: pnpm
+#   We use conventional commits
+#   Beads (bd) for issue tracking — every task needs a bead
+#   Quality gates: npm test, npm run lint, npm run build
+
+# Per-artifact rules (optional)
+# rules:
+#   proposal:
+#     - Keep proposals under 500 words
+#     - Always include a "Non-goals" section
+#   tasks:
+#     - Break tasks into chunks of max 2 hours
+#     - Each task should map to a single bead issue
