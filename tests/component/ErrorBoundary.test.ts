@@ -20,11 +20,7 @@ describe('ErrorBoundary', () => {
     expect(wrapper.find('h2').exists()).toBe(false)
   })
 
-  // Note: Vue 3 fragment patching in jsdom does not fully render the error
-  // template (h2, p, button are missing). We test error state via exposed refs
-  // and verify the dev error details block which does render correctly.
-
-  it('captures error state via exposed ref', async () => {
+  it('displays error UI when error state is set', async () => {
     const wrapper = mount(ErrorBoundary, {
       slots: {
         default: '<p>Content</p>'
@@ -32,15 +28,14 @@ describe('ErrorBoundary', () => {
     })
 
     const vm = wrapper.vm as any
-    expect(vm.error).toBeNull()
-
     vm.error = new Error('Something broke')
     await nextTick()
 
-    expect(vm.error).toBeInstanceOf(Error)
-    expect(vm.error.message).toBe('Something broke')
-    // Dev error details block renders in test env (import.meta.env.DEV = true)
-    expect(wrapper.html()).toContain('Error: Something broke')
+    const html = wrapper.html()
+    expect(html).toContain('Something went wrong')
+    expect(html).toContain('An unexpected error occurred')
+    expect(html).toContain('Try Again')
+    expect(html).toContain('Error: Something broke')
   })
 
   it('hides slot content when error is present', async () => {
@@ -57,9 +52,10 @@ describe('ErrorBoundary', () => {
     await nextTick()
 
     expect(wrapper.html()).not.toContain('Slot Content')
+    expect(wrapper.html()).toContain('Something went wrong')
   })
 
-  it('resets error state and increments renderKey', async () => {
+  it('re-renders slot content after reset', async () => {
     const wrapper = mount(ErrorBoundary, {
       slots: {
         default: '<p>Original Content</p>'
@@ -67,30 +63,37 @@ describe('ErrorBoundary', () => {
     })
 
     const vm = wrapper.vm as any
-    const initialKey = vm.renderKey
 
     // Set error
     vm.error = new Error('test error')
     await nextTick()
-    expect(vm.error).toBeInstanceOf(Error)
+    expect(wrapper.html()).toContain('Something went wrong')
 
     // Reset via exposed method
     vm.reset()
     await nextTick()
 
     expect(vm.error).toBeNull()
-    expect(vm.renderKey).toBe(initialKey + 1)
     expect(wrapper.html()).toContain('Original Content')
+    expect(wrapper.html()).not.toContain('Something went wrong')
   })
 
-  it('exposes error, reset, and renderKey', () => {
+  it('increments renderKey on reset to force slot re-mount', async () => {
     const wrapper = mount(ErrorBoundary, {
-      slots: { default: '<p>Test</p>' }
+      slots: {
+        default: '<p>Content</p>'
+      }
     })
 
     const vm = wrapper.vm as any
-    expect(vm.error).toBeNull()
-    expect(typeof vm.reset).toBe('function')
-    expect(typeof vm.renderKey).toBe('number')
+    const initialKey = vm.renderKey
+
+    vm.error = new Error('test')
+    await nextTick()
+
+    vm.reset()
+    await nextTick()
+
+    expect(vm.renderKey).toBe(initialKey + 1)
   })
 })
