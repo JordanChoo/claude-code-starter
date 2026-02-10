@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import HelloWorld from '@/components/HelloWorld.vue'
+import FeatureCards from '@/components/FeatureCards.vue'
 </script>
 
 <template>
@@ -11,7 +11,7 @@ import HelloWorld from '@/components/HelloWorld.vue'
       A boilerplate template with Vue 3, Vite, Tailwind CSS, and Firebase
     </p>
     <div class="mt-8">
-      <HelloWorld msg="Welcome to your new project" />
+      <FeatureCards />
     </div>
   </div>
 </template>
