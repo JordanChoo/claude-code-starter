@@ -22,15 +22,24 @@ export interface User extends BaseDocument {
 }
 
 /**
- * Maps Firestore collection names to their document types.
- * Add new collections here as they are created.
+ * Collection registry — single source of truth for Firestore collection names.
+ * Add new collections here. TypeScript automatically infers CollectionMap.
  */
-export interface CollectionMap {
-  users: User
-}
+const collectionRegistry = {
+  users: {} as User,
+  // Add new collections: posts: {} as Post,
+} as const satisfies Record<string, BaseDocument>
+
+/** Maps Firestore collection names to their document types. Auto-derived from registry. */
+export type CollectionMap = { [K in keyof typeof collectionRegistry]: (typeof collectionRegistry)[K] }
 
 /** Union of all valid Firestore collection names. */
 export type CollectionName = keyof CollectionMap
+
+/** Returns all registered collection names at runtime. */
+export function getCollectionNames(): CollectionName[] {
+  return Object.keys(collectionRegistry) as CollectionName[]
+}
 
 /**
  * Converts a document type into its Firestore write-side equivalent.
