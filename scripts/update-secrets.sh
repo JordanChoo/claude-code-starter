@@ -3,6 +3,10 @@
 #
 # Usage: ./scripts/update-secrets.sh [--dry-run]
 #   --dry-run: Show what would be updated without making changes
+#
+# Security: Uses hash comparison to avoid holding secret values in
+# long-lived shell variables. Secrets are piped directly to gcloud
+# without intermediate storage.
 
 set -e
 
@@ -57,19 +61,22 @@ while IFS= read -r line || [ -n "$line" ]; do
 
   # Only process VITE_ prefixed variables
   if [[ "$key" == VITE_* ]]; then
+    # Hash the local value for comparison (avoids storing remote secret in a variable)
+    local_hash=$(printf '%s' "$value" | shasum -a 256 | cut -d' ' -f1)
+
     # Check if secret exists
     if gcloud secrets describe "$key" &>/dev/null; then
-      # Get current value
-      current_value=$(gcloud secrets versions access latest --secret="$key" 2>/dev/null || echo "")
+      # Hash the remote value for comparison
+      remote_hash=$(gcloud secrets versions access latest --secret="$key" 2>/dev/null | shasum -a 256 | cut -d' ' -f1 || echo "")
 
-      if [ "$current_value" == "$value" ]; then
+      if [ "$local_hash" == "$remote_hash" ]; then
         echo "   SKIP: $key (unchanged)"
         ((SKIPPED++))
       else
         if [ "$DRY_RUN" = true ]; then
           echo "   WOULD UPDATE: $key"
         else
-          echo -n "$value" | gcloud secrets versions add "$key" --data-file=- &>/dev/null
+          printf '%s' "$value" | gcloud secrets versions add "$key" --data-file=- &>/dev/null
           echo "   UPDATED: $key"
         fi
         ((UPDATED++))
@@ -79,7 +86,7 @@ while IFS= read -r line || [ -n "$line" ]; do
         echo "   WOULD CREATE: $key"
       else
         gcloud secrets create "$key" --replication-policy="automatic" &>/dev/null
-        echo -n "$value" | gcloud secrets versions add "$key" --data-file=- &>/dev/null
+        printf '%s' "$value" | gcloud secrets versions add "$key" --data-file=- &>/dev/null
         echo "   CREATED: $key"
       fi
       ((CREATED++))

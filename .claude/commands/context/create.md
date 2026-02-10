@@ -6,11 +6,6 @@ allowed-tools: Bash, Read, Write, LS
 
 This command creates the initial project context documentation in `.claude/context/` by analyzing the current project state and establishing comprehensive baseline documentation.
 
-## Required Rules
-
-**IMPORTANT:** Before executing this command, read and follow:
-- `.claude/rules/datetime.md` - For getting real current date/time
-
 ## Preflight Checklist
 
 Before proceeding, complete these validation steps.
