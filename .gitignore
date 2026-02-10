@@ -35,3 +35,15 @@ Thumbs.db
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# Firebase Emulator
+emulator-data/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

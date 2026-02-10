@@ -10,6 +10,23 @@ export default defineConfig({
     }
   },
   test: {
-    environment: 'jsdom'
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup/vitest.setup.ts'],
+    include: [
+      'tests/unit/**/*.{test,spec}.ts',
+      'tests/component/**/*.{test,spec}.ts'
+    ],
+    exclude: ['tests/e2e/**/*', 'node_modules/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,vue}'],
+      exclude: [
+        'src/main.ts',
+        'src/**/*.d.ts'
+      ]
+    }
   }
 })
