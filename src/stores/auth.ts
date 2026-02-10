@@ -21,6 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
   const actionLoading = ref(false)
   const loading = computed(() => initializing.value || actionLoading.value)
   const error = ref<string | null>(null)
+  const profileError = ref<string | null>(null)
 
   let _initialized = false
   let _unsubscribeAuth: (() => void) | null = null
@@ -88,10 +89,14 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = firebaseUser
       if (firebaseUser) {
         try {
+          profileError.value = null
           await ensureUserDocument(firebaseUser)
         } catch (e) {
           console.error('Failed to ensure user document:', e)
+          profileError.value = 'Failed to set up your profile. Please try refreshing the page.'
         }
+      } else {
+        profileError.value = null
       }
       initializing.value = false
       _authReadyResolve?.()
@@ -172,6 +177,7 @@ export const useAuthStore = defineStore('auth', () => {
     actionLoading,
     loading,
     error,
+    profileError,
     isAuthenticated,
     userEmail,
     userId,

@@ -55,7 +55,16 @@ async function handleLogout() {
       <ErrorBoundary>
         <template v-if="!authStore.loading">
           <component :is="route.meta.layout === 'none' ? 'div' : DefaultLayout">
-            <router-view />
+            <router-view v-slot="{ Component }">
+              <Suspense>
+                <component :is="Component" />
+                <template #fallback>
+                  <div class="flex justify-center items-center py-20">
+                    <span class="text-gray-400">Loading...</span>
+                  </div>
+                </template>
+              </Suspense>
+            </router-view>
           </component>
         </template>
         <div v-else class="flex justify-center items-center py-20">

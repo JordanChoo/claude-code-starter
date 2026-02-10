@@ -63,13 +63,13 @@ async function handleGoogleLogin() {
       </div>
 
       <form @submit.prevent="handleSubmit" class="mt-8 space-y-6">
-        <div v-if="authStore.error" class="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+        <div v-if="authStore.error" class="error-banner">
           {{ authStore.error }}
         </div>
 
         <div class="space-y-4">
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
+            <label for="email" class="input-label">
               Email address
             </label>
             <input
@@ -78,12 +78,12 @@ async function handleGoogleLogin() {
               type="email"
               required
               autocomplete="email"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              class="input-field mt-1"
             />
           </div>
 
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
+            <label for="password" class="input-label">
               Password
             </label>
             <input
@@ -93,7 +93,7 @@ async function handleGoogleLogin() {
               required
               minlength="6"
               :autocomplete="isLogin ? 'current-password' : 'new-password'"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              class="input-field mt-1"
             />
           </div>
         </div>
@@ -102,7 +102,7 @@ async function handleGoogleLogin() {
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="btn-primary w-full flex justify-center"
           >
             {{ isSubmitting ? 'Please wait...' : (isLogin ? 'Sign in' : 'Sign up') }}
           </button>
@@ -122,7 +122,7 @@ async function handleGoogleLogin() {
             type="button"
             @click="handleGoogleLogin"
             :disabled="isSubmitting"
-            class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="btn-secondary w-full flex justify-center"
           >
             Google
           </button>
@@ -132,7 +132,7 @@ async function handleGoogleLogin() {
           <button
             type="button"
             @click="isLogin = !isLogin"
-            class="text-sm text-blue-600 hover:text-blue-500"
+            class="btn-text"
           >
             {{ isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in' }}
           </button>

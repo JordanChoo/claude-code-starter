@@ -20,7 +20,7 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(() => 'mock-timestamp')
 }))
 
-import { signIn, signUp, signOut, onAuthChange } from '@/firebase/auth'
+import { signIn, signUp, signOut, signInWithGoogle, onAuthChange } from '@/firebase/auth'
 import { getDocument, setDocument } from '@/firebase/firestore'
 
 describe('Auth Store', () => {
@@ -151,7 +151,7 @@ describe('Auth Store', () => {
 
       expect(signIn).toHaveBeenCalledWith('test@example.com', 'password123')
       expect(store.error).toBeNull()
-      expect(store.loading).toBe(false)
+      expect(store.actionLoading).toBe(false)
     })
 
     it('sets error on failure and re-throws', async () => {
@@ -164,7 +164,7 @@ describe('Auth Store', () => {
       await expect(store.login('test@example.com', 'wrong')).rejects.toThrow()
 
       expect(store.error).toBe('Incorrect password. Please try again.')
-      expect(store.loading).toBe(false)
+      expect(store.actionLoading).toBe(false)
     })
   })
 
@@ -198,7 +198,7 @@ describe('Auth Store', () => {
 
       expect(signOut).toHaveBeenCalledOnce()
       expect(store.error).toBeNull()
-      expect(store.loading).toBe(false)
+      expect(store.actionLoading).toBe(false)
     })
   })
 
@@ -244,6 +244,199 @@ describe('Auth Store', () => {
 
       await expect(store.login('a@b.com', 'pass')).rejects.toThrow()
       expect(store.error).toBe('An unexpected error occurred: Network failure')
+    })
+  })
+
+  describe('loginWithGoogle()', () => {
+    it('calls signInWithGoogle and clears error on success', async () => {
+      vi.mocked(signInWithGoogle).mockResolvedValue({} as any)
+      const store = useAuthStore()
+      await store.loginWithGoogle()
+
+      expect(signInWithGoogle).toHaveBeenCalledOnce()
+      expect(store.error).toBeNull()
+      expect(store.actionLoading).toBe(false)
+    })
+
+    it('sets error on popup-closed-by-user and re-throws', async () => {
+      const firebaseError = Object.assign(new Error('popup closed'), {
+        code: 'auth/popup-closed-by-user'
+      })
+      vi.mocked(signInWithGoogle).mockRejectedValue(firebaseError)
+      const store = useAuthStore()
+
+      await expect(store.loginWithGoogle()).rejects.toThrow()
+      expect(store.error).toBe('Google sign-in was cancelled.')
+      expect(store.actionLoading).toBe(false)
+    })
+  })
+
+  describe('dispose() and waitForAuth()', () => {
+    it('waitForAuth resolves after init fires auth callback', async () => {
+      vi.mocked(onAuthChange).mockImplementation((callback: any) => {
+        callback(null)
+        return vi.fn()
+      })
+
+      const store = useAuthStore()
+      store.init()
+      await store.waitForAuth()
+
+      expect(store.loading).toBe(false)
+    })
+
+    it('dispose resets state and makes waitForAuth block again', async () => {
+      // First init cycle
+      vi.mocked(onAuthChange).mockImplementation((callback: any) => {
+        callback(null)
+        return vi.fn()
+      })
+
+      const store = useAuthStore()
+      store.init()
+      await store.waitForAuth()
+      expect(store.loading).toBe(false)
+
+      // Dispose
+      store.dispose()
+      expect(store.initializing).toBe(true)
+      expect(store.actionLoading).toBe(false)
+      expect(store.loading).toBe(true)
+
+      // After dispose, waitForAuth should NOT resolve immediately
+      let resolved = false
+      store.waitForAuth().then(() => { resolved = true })
+
+      // Give microtasks a chance to run
+      await new Promise(resolve => setTimeout(resolve, 10))
+      expect(resolved).toBe(false)
+
+      // Re-init should make it resolve
+      store.init()
+      await store.waitForAuth()
+      expect(store.loading).toBe(false)
+    })
+  })
+
+  describe('ensureUserDocument error handling', () => {
+    it('continues with loading=false when ensureUserDocument fails', async () => {
+      const mockUser = { uid: 'fail-uid', email: 'fail@example.com', displayName: null, photoURL: null }
+      vi.mocked(onAuthChange).mockImplementation((callback: any) => {
+        callback(mockUser)
+        return vi.fn()
+      })
+      vi.mocked(getDocument).mockRejectedValue(new Error('Firestore unavailable'))
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      const store = useAuthStore()
+      store.init()
+
+      await vi.waitFor(() => {
+        expect(store.loading).toBe(false)
+      })
+
+      expect(store.user).toEqual(mockUser)
+      expect(store.isAuthenticated).toBe(true)
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to ensure user document:', expect.any(Error))
+      consoleSpy.mockRestore()
+    })
+
+    it('sets profileError when ensureUserDocument fails', async () => {
+      const mockUser = { uid: 'fail-uid', email: 'fail@example.com', displayName: null, photoURL: null }
+      vi.mocked(onAuthChange).mockImplementation((callback: any) => {
+        callback(mockUser)
+        return vi.fn()
+      })
+      vi.mocked(getDocument).mockResolvedValue(null)
+      vi.mocked(setDocument).mockRejectedValue(new Error('Firestore write failed'))
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+      const store = useAuthStore()
+      store.init()
+
+      await vi.waitFor(() => {
+        expect(store.loading).toBe(false)
+      })
+
+      expect(store.profileError).toBe('Failed to set up your profile. Please try refreshing the page.')
+      expect(store.loading).toBe(false)
+      expect(store.user).toEqual(mockUser)
+      expect(store.isAuthenticated).toBe(true)
+      consoleSpy.mockRestore()
+    })
+
+    it('clears profileError on successful auth change', async () => {
+      // First trigger a failure
+      const mockUser = { uid: 'uid-1', email: 'user@example.com', displayName: null, photoURL: null }
+      let authCallback: any
+      vi.mocked(onAuthChange).mockImplementation((callback: any) => {
+        authCallback = callback
+        return vi.fn()
+      })
+
+      const store = useAuthStore()
+      store.init()
+
+      // Trigger failure
+      vi.mocked(getDocument).mockRejectedValue(new Error('Firestore unavailable'))
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      await authCallback(mockUser)
+      expect(store.profileError).toBe('Failed to set up your profile. Please try refreshing the page.')
+
+      // Trigger success
+      vi.mocked(getDocument).mockResolvedValue({ id: 'uid-1' } as any)
+      await authCallback(mockUser)
+      expect(store.profileError).toBeNull()
+
+      consoleSpy.mockRestore()
+    })
+
+    it('clears profileError when user signs out', async () => {
+      const mockUser = { uid: 'uid-2', email: 'user2@example.com', displayName: null, photoURL: null }
+      let authCallback: any
+      vi.mocked(onAuthChange).mockImplementation((callback: any) => {
+        authCallback = callback
+        return vi.fn()
+      })
+
+      const store = useAuthStore()
+      store.init()
+
+      // Trigger failure
+      vi.mocked(getDocument).mockRejectedValue(new Error('Firestore unavailable'))
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      await authCallback(mockUser)
+      expect(store.profileError).toBe('Failed to set up your profile. Please try refreshing the page.')
+
+      // Sign out (null user)
+      await authCallback(null)
+      expect(store.profileError).toBeNull()
+
+      consoleSpy.mockRestore()
+    })
+
+    it('skips document creation for users with null email', async () => {
+      const mockUser = { uid: 'anon-uid', email: null, displayName: null, photoURL: null }
+      vi.mocked(onAuthChange).mockImplementation((callback: any) => {
+        callback(mockUser)
+        return vi.fn()
+      })
+
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      const store = useAuthStore()
+      store.init()
+
+      await vi.waitFor(() => {
+        expect(store.loading).toBe(false)
+      })
+
+      expect(getDocument).not.toHaveBeenCalled()
+      expect(setDocument).not.toHaveBeenCalled()
+      expect(consoleSpy).toHaveBeenCalledWith('User has no email address, skipping document creation')
+      consoleSpy.mockRestore()
     })
   })
 })
