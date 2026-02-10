@@ -279,11 +279,13 @@ git worktree remove ../my-project-task-a
 
 A pre-tool-use hook at `.claude/hooks/bash-worktree-fix.sh` automatically detects when Claude Code is running inside a worktree and adjusts Bash commands to execute in the correct worktree root. This prevents commands from accidentally running in the main repository directory.
 
-To enable the hook, copy the example settings:
+To enable the hook and default permissions, copy the example settings:
 
 ```bash
 cp .claude/settings.json.example .claude/settings.json
 ```
+
+> **Note:** If you already have a `.claude/settings.json`, merge the contents from the example file instead of overwriting to preserve your existing settings.
 
 Or add the hook manually to your `.claude/settings.json`:
 
