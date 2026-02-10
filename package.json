@@ -19,7 +19,7 @@
     "firebase:emulators:ci": "firebase emulators:start --project demo-test",
     "deploy": "./scripts/verify-env.sh && npm run build && firebase deploy",
     "deploy:rules": "firebase deploy --only firestore:rules",
-    "deploy:hosting": "npm run build && firebase deploy --only hosting",
+    "deploy:hosting": "./scripts/verify-env.sh && npm run build && firebase deploy --only hosting",
     "secrets:scan": "secretlint \"**/*\""
   },
   "lint-staged": {
@@ -36,9 +36,10 @@
     "@eslint/js": "^9.39.2",
     "@pinia/testing": "^0.1.7",
     "@playwright/test": "^1.58.2",
+    "@secretlint/secretlint-rule-preset-recommend": "^11.3.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/vue": "^8.1.0",
-    "@vitejs/plugin-vue": "^5.0.3",
+    "@vitejs/plugin-vue": "^6.0.4",
     "@vitest/coverage-v8": "^4.0.18",
     "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.17",
@@ -49,11 +50,10 @@
     "lint-staged": "^16.2.7",
     "postcss": "^8.4.33",
     "secretlint": "^11.3.1",
-    "@secretlint/secretlint-rule-preset-recommend": "^11.3.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
     "typescript-eslint": "^8.53.1",
-    "vite": "^5.0.12",
+    "vite": "^7.3.1",
     "vitest": "^4.0.18",
     "vue-tsc": "^2.0.0"
   }
