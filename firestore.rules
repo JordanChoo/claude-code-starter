@@ -27,6 +27,10 @@ service cloud.firestore {
       return url == null || (url.matches('^https://.*') && url.size() <= 2048);
     }
 
+    function validRole(role) {
+      return role == 'user' || role == 'admin' || role == 'moderator';
+    }
+
     // Users collection rules
     match /users/{userId} {
       allow read: if isOwner(userId);
@@ -35,6 +39,7 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
+        && validRole(request.resource.data.role)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 
@@ -43,6 +48,8 @@ service cloud.firestore {
         && request.resource.data.email == resource.data.email
         && validDisplayName(request.resource.data.displayName)
         && validPhotoURL(request.resource.data.photoURL)
+        && validRole(request.resource.data.role)
+        && request.resource.data.role == resource.data.role
         && request.resource.data.updatedAt == request.time;
 
       allow delete: if isOwner(userId);

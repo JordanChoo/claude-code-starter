@@ -48,6 +48,7 @@ describe('User Store', () => {
         email: 'new@example.com',
         displayName: 'New User',
         photoURL: null,
+        role: 'user',
         createdAt: 'mock-timestamp',
         updatedAt: 'mock-timestamp'
       })
@@ -103,6 +104,72 @@ describe('User Store', () => {
       expect(setDocument).not.toHaveBeenCalled()
       expect(consoleSpy).toHaveBeenCalledWith('User has no email address, skipping document creation')
       consoleSpy.mockRestore()
+    })
+  })
+
+  describe('userRole computed', () => {
+    it('defaults to "user" when no profile is loaded', () => {
+      const store = useUserStore()
+      expect(store.userRole).toBe('user')
+    })
+
+    it('returns role from profile when loaded', async () => {
+      vi.mocked(getDocument).mockResolvedValue({ id: 'uid-admin', email: 'admin@example.com', role: 'admin' } as any)
+
+      const store = useUserStore()
+      await store.loadProfile('uid-admin', 'admin@example.com', null, null)
+
+      expect(store.userRole).toBe('admin')
+    })
+
+    it('defaults to "user" when profile has no role field', async () => {
+      vi.mocked(getDocument).mockResolvedValue({ id: 'uid-old', email: 'old@example.com' } as any)
+
+      const store = useUserStore()
+      await store.loadProfile('uid-old', 'old@example.com', null, null)
+
+      expect(store.userRole).toBe('user')
+    })
+  })
+
+  describe('hasRole()', () => {
+    it('returns true when role matches', async () => {
+      vi.mocked(getDocument).mockResolvedValue({ id: 'uid-mod', email: 'mod@example.com', role: 'moderator' } as any)
+
+      const store = useUserStore()
+      await store.loadProfile('uid-mod', 'mod@example.com', null, null)
+
+      expect(store.hasRole('moderator')).toBe(true)
+    })
+
+    it('returns false when role does not match', async () => {
+      vi.mocked(getDocument).mockResolvedValue({ id: 'uid-user', email: 'user@example.com', role: 'user' } as any)
+
+      const store = useUserStore()
+      await store.loadProfile('uid-user', 'user@example.com', null, null)
+
+      expect(store.hasRole('admin')).toBe(false)
+    })
+
+    it('returns true for "user" role when no profile is loaded', () => {
+      const store = useUserStore()
+      expect(store.hasRole('user')).toBe(true)
+    })
+  })
+
+  describe('ensureUserDocument sets default role', () => {
+    it('sets role to "user" when creating a new user document', async () => {
+      vi.mocked(getDocument)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'new-uid', email: 'new@example.com', role: 'user' } as any)
+      vi.mocked(setDocument).mockResolvedValue(undefined)
+
+      const store = useUserStore()
+      await store.loadProfile('new-uid', 'new@example.com', null, null)
+
+      expect(setDocument).toHaveBeenCalledWith('users', 'new-uid', expect.objectContaining({
+        role: 'user'
+      }))
     })
   })
 

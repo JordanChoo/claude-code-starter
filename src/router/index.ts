@@ -1,10 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/user'
 import HomeView from '@/views/HomeView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
+    requiredRoles?: string[]
     layout?: 'none'
   }
 }
@@ -51,6 +53,13 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.requiredRoles && to.meta.requiredRoles.length > 0) {
+    const userStore = useUserStore()
+    const userRole = userStore.userProfile?.role || 'user'
+    if (!to.meta.requiredRoles.includes(userRole)) {
+      return { name: 'dashboard' }
+    }
   }
   if (to.name === 'login' && authStore.isAuthenticated) {
     return { name: 'dashboard' }

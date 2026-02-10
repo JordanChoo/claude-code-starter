@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { serverTimestamp } from 'firebase/firestore'
 import { useAuthStore } from '@/stores/auth'
 import { getDocument, setDocument } from '@/firebase/firestore'
@@ -9,6 +9,7 @@ export const useUserStore = defineStore('user', () => {
   const userProfile = ref<User | null>(null)
   const profileError = ref<string | null>(null)
   const profileLoading = ref(false)
+  const userRole = computed(() => userProfile.value?.role || 'user')
 
   async function ensureUserDocument(uid: string, email: string, displayName: string | null, photoURL: string | null) {
     const existing = await getDocument('users', uid)
@@ -17,6 +18,7 @@ export const useUserStore = defineStore('user', () => {
         email,
         displayName: displayName || null,
         photoURL: photoURL || null,
+        role: 'user',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       })
@@ -41,6 +43,10 @@ export const useUserStore = defineStore('user', () => {
     } finally {
       profileLoading.value = false
     }
+  }
+
+  function hasRole(role: string): boolean {
+    return userRole.value === role
   }
 
   function clearProfile() {
@@ -72,8 +78,10 @@ export const useUserStore = defineStore('user', () => {
     userProfile,
     profileError,
     profileLoading,
+    userRole,
     loadProfile,
     clearProfile,
+    hasRole,
     setupAuthWatcher
   }
 })

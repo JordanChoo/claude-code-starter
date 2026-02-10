@@ -11,6 +11,9 @@ export interface BaseDocument {
   updatedAt: Timestamp
 }
 
+/** Valid user roles for role-based access control */
+export type UserRole = 'user' | 'admin' | 'moderator'
+
 /**
  * User document stored in the 'users' collection
  * @see .claude/rules/firebase-data-models.md for full documentation
@@ -19,6 +22,7 @@ export interface User extends BaseDocument {
   email: string
   displayName?: string
   photoURL?: string
+  role?: UserRole
 }
 
 /**
