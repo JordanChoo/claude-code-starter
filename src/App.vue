@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 async function handleLogout() {
   await authStore.logout()
@@ -45,7 +47,11 @@ async function handleLogout() {
       </div>
     </nav>
     <main>
-      <router-view v-if="!authStore.loading" />
+      <template v-if="!authStore.loading">
+        <component :is="route.meta.layout === 'none' ? 'div' : DefaultLayout">
+          <router-view />
+        </component>
+      </template>
       <div v-else class="flex justify-center items-center py-20">
         <span class="text-gray-400">Loading...</span>
       </div>
