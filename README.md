@@ -252,6 +252,81 @@ dcg explain "git reset --hard"
 
 DCG will explain the rule and suggest safer alternatives. See [.claude/rules/destructive-command-guard.md](.claude/rules/destructive-command-guard.md) for full configuration.
 
+## Git Worktrees (Parallel Agent Work)
+
+This template supports [git worktrees](https://git-scm.com/docs/git-worktree) for running multiple Claude Code agents in parallel on the same repository. Each agent works in its own worktree, avoiding file conflicts.
+
+### Why Worktrees?
+
+When Claude Code spawns parallel sub-agents (e.g., one building the API while another builds the UI), they need isolated working directories. Git worktrees provide this without cloning the repo multiple times — each worktree shares the same `.git` history but has its own checked-out files.
+
+### Creating a Worktree
+
+```bash
+# Create a worktree for a specific task
+git worktree add ../my-project-task-a feature/task-a
+
+# Create a worktree on a new branch
+git worktree add -b feature/task-b ../my-project-task-b main
+
+# List active worktrees
+git worktree list
+
+# Remove a worktree when done
+git worktree remove ../my-project-task-a
+```
+
+### Bash Worktree Hook
+
+A pre-tool-use hook at `.claude/hooks/bash-worktree-fix.sh` automatically detects when Claude Code is running inside a worktree and adjusts Bash commands to execute in the correct worktree root. This prevents commands from accidentally running in the main repository directory.
+
+To enable the hook, copy the example settings:
+
+```bash
+cp .claude/settings.json.example .claude/settings.json
+```
+
+Or add the hook manually to your `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "pre-tool-use": {
+      "Bash": {
+        "enabled": true,
+        "script": ".claude/hooks/bash-worktree-fix.sh",
+        "description": "Automatically prepends worktree path to Bash commands when in a worktree",
+        "apply_to_subagents": true
+      }
+    }
+  }
+}
+```
+
+### How Parallel Agents Use Worktrees
+
+The `parallel-worker` agent (`.claude/agents/parallel-worker.md`) coordinates this workflow:
+
+1. **Main agent** creates worktrees and assigns file scopes to sub-agents
+2. **Sub-agents** work independently in their own worktrees — no file conflicts
+3. **Main agent** consolidates results and cleans up worktrees
+
+Each sub-agent commits only its assigned files, and commits are serialized in dependency order. See `AGENTS.md` for the full parallel agent rules and commit discipline.
+
+### Cleanup
+
+```bash
+# List worktrees
+git worktree list
+
+# Remove finished worktrees
+git worktree remove ../my-project-task-a
+git worktree remove ../my-project-task-b
+
+# Prune stale worktree references
+git worktree prune
+```
+
 ## Tips for Working with Claude Code
 
 1. **Be specific about behavior** — "Show a loading spinner while saving" is better than "add loading state"
