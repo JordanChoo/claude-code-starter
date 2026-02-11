@@ -31,21 +31,22 @@ When tackling any non-trivial task:
 
 ## Integrated Workflow
 
-- **[Beads](https://github.com/steveyegge/beads/)** (`bd`) — Single system of record for ALL work. Git-backed issue tracking in `.beads/`.
+- **[Beads](https://github.com/steveyegge/beads/)** (`br`) — Single system of record for ALL work. Git-backed issue tracking in `.beads/`.
+- **[Beads Viewer](https://github.com/Dicklesworthstone/beads_viewer)** (`bv`) — Graph-aware triage engine. Use `bv --robot-triage` for work prioritization and dependency analysis. **Never run bare `bv`** (launches interactive TUI).
 - **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** — Planning scratchpad for structured thinking. Artifacts in `openspec/` are temporary.
 
 See `AGENTS.md` for the complete workflow, commit discipline, and session close protocol.
 
 ## Issue Tracking Rules
 
-### Every `bd create` MUST include `-d`
+### Every `br create` MUST include `-d`
 
 ```bash
 # FORBIDDEN — will be rejected
-bd create "Update file.ts" -t task
+br create "Update file.ts" -t task
 
 # REQUIRED — every issue needs full context
-bd create "Title" -t task -p 2 -d "## Requirements
+br create "Title" -t task -p 2 -d "## Requirements
 - What needs to be done
 
 ## Acceptance Criteria

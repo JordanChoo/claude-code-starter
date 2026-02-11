@@ -1,24 +1,24 @@
 # Agent Instructions
 
-Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for auto-injection.
+Run `br prime` for workflow context. Use `bv --robot-triage` to find prioritized work.
 
 ---
 
 ## Agent Warnings
 
-### Do NOT Use `bd edit`
+### Do NOT Use `br edit`
 
-**WARNING:** `bd edit` opens an interactive editor (`$EDITOR`) which Claude Code cannot use. It will hang indefinitely.
+**WARNING:** `br edit` opens an interactive editor (`$EDITOR`) which Claude Code cannot use. It will hang indefinitely.
 
-Use `bd update` with flags instead:
+Use `br update` with flags instead:
 ```bash
-bd update <id> --title "new title"
-bd update <id> --description "new description"
-bd update <id> --design "design notes"
-bd update <id> --notes "additional notes"
-bd update <id> --acceptance "acceptance criteria"
-bd update <id> --status in_progress
-bd update <id> --add-note "Session end: <context>"
+br update <id> --title "new title"
+br update <id> --description "new description"
+br update <id> --design "design notes"
+br update <id> --notes "additional notes"
+br update <id> --acceptance "acceptance criteria"
+br update <id> --status in_progress
+br update <id> --add-note "Session end: <context>"
 ```
 
 ### Non-Interactive Shell Commands
@@ -45,15 +45,15 @@ Other commands that may prompt:
 - `apt-get` — use `-y` flag
 - `brew` — use `HOMEBREW_NO_AUTO_UPDATE=1`
 
-### Use `--json` for Structured Output
+### Use `bv --robot-*` for Triage and `br --json` for Mutations
 
-Always prefer `--json` flag when processing `bd` output programmatically:
+For querying, triage, and analysis, use `bv` robot commands (output JSON by default). See [Using bv as an AI sidecar](#using-bv-as-an-ai-sidecar) for the full command reference, output format, filtering, and usage patterns.
+
+For mutations and detailed single-issue views, use `br` with `--json`:
 ```bash
-bd ready --json
-bd list --json
-bd show <id> --json
-bd stats --json
-bd compact --analyze --json
+br show <id> --json
+br list --json
+br compact --analyze --json
 ```
 
 ---
@@ -64,7 +64,7 @@ Skip OpenSpec for work you can describe in a single bead description. Use OpenSp
 
 | Situation | Action |
 |-----------|--------|
-| New feature/capability | `bd create` epic, then `/opsx:ff` to plan |
+| New feature/capability | `br create` epic, then `/opsx:ff` to plan |
 | Need to think through a problem | `/opsx:explore` |
 | Need structured planning | `/opsx:ff <name>` or `/opsx:new <name>` |
 
@@ -83,44 +83,43 @@ Beads uses numeric priorities 0-4 (or P0-P4). Do NOT use "high"/"medium"/"low".
 | P4 | Backlog | Someday/maybe, future consideration |
 
 ```bash
-bd create "Fix auth bug" -t bug -p 0 -d "..."   # Critical
-bd create "Add feature" -t task -p 2 -d "..."    # Standard
+br create "Fix auth bug" -t bug -p 0 -d "..."   # Critical
+br create "Add feature" -t task -p 2 -d "..."    # Standard
 ```
 
 ---
 
 ## Dependencies
 
-Use `bd dep` to express blocking relationships between issues:
+Use `br dep` to express blocking relationships between issues:
 
 ```bash
-bd dep add <issue> <depends-on>     # issue depends on depends-on
-bd blocked                          # Show all blocked issues
-bd show <id>                        # See blocking/blocked-by for an issue
+br dep add <issue> <depends-on>     # issue depends on depends-on
+bv --robot-alerts                   # Show blocked issues and blocking cascades
+br show <id>                        # See blocking/blocked-by for an issue
 ```
 
 Example:
 ```bash
-bd create "Implement API" -t task -p 2 -d "..."       # → bd-abc
-bd create "Write API tests" -t task -p 2 -d "..."     # → bd-def
-bd dep add bd-def bd-abc            # Tests depend on API implementation
+br create "Implement API" -t task -p 2 -d "..."       # → br-abc
+br create "Write API tests" -t task -p 2 -d "..."     # → br-def
+br dep add br-def br-abc            # Tests depend on API implementation
 ```
 
 ---
 
-## Sync and Debounce Mechanics
+## Sync Mechanics
 
-Beads auto-exports to JSONL with a **30-second debounce** after mutations. This means:
-- Multiple changes within 30 seconds get batched into one JSONL flush
-- Without `bd sync`, changes may sit in the debounce window when you end your session
-- The user may think you pushed, but the JSONL is still dirty
+**Note:** `br` is non-invasive and never executes git commands. After `br sync --flush-only`, you must manually run `git add .beads/ && git commit`.
 
-**Always run `bd sync` at the end of your session.** It forces an immediate:
-1. Export pending changes to JSONL (bypasses 30s debounce)
-2. Commit to git
-3. Pull from remote
-4. Import any remote updates
-5. Push to remote
+**Always run `br sync --flush-only` at the end of your session.** It exports pending changes to JSONL. Then commit and push manually:
+
+```bash
+br sync --flush-only
+git add .beads/
+git commit -m "sync beads"
+git push
+```
 
 ### Merge Conflicts in `.beads/issues.jsonl`
 
@@ -130,30 +129,119 @@ Hash-based IDs make conflicts rare, but if they occur:
 # WARNING: This discards ALL local beads changes in favor of remote.
 # Only use when you are certain the remote version is correct.
 git checkout --theirs .beads/issues.jsonl   # Accept remote version
-bd import -i .beads/issues.jsonl            # Re-import to rebuild DB
+br import -i .beads/issues.jsonl            # Re-import to rebuild DB
 ```
 
-Or for manual resolution: merge the file, then run `bd import`.
+Or for manual resolution: merge the file, then run `br import`.
 
 ### Test Database Isolation
 
 **Never pollute the production database with test issues.** Use `BEADS_DB` for manual testing:
 
 ```bash
-BEADS_DB=/tmp/test.db bd create "Test issue" -p 1
+BEADS_DB=/tmp/test.db br create "Test issue" -p 1
 ```
 
 ---
 
-## Daemon Management
+### Using bv as an AI sidecar
 
-The Beads daemon handles RPC communication and auto-sync. If you encounter daemon issues:
+bv is a graph-aware triage engine for Beads projects (.beads/beads.jsonl). Instead of parsing JSONL or hallucinating graph traversal, use robot flags for deterministic, dependency-aware outputs with precomputed metrics (PageRank, betweenness, critical path, cycles, HITS, eigenvector, k-core).
+
+**Scope boundary:** bv handles *what to work on* (triage, priority, planning). For agent-to-agent coordination (messaging, work claiming, file reservations), use [MCP Agent Mail](https://github.com/Dicklesworthstone/mcp_agent_mail).
+
+**⚠️ CRITICAL: Use ONLY `--robot-*` flags. Bare `bv` launches an interactive TUI that blocks your session.**
+
+#### The Workflow: Start With Triage
+
+**`bv --robot-triage` is your single entry point.** It returns everything you need in one call:
+- `quick_ref`: at-a-glance counts + top 3 picks
+- `recommendations`: ranked actionable items with scores, reasons, unblock info
+- `quick_wins`: low-effort high-impact items
+- `blockers_to_clear`: items that unblock the most downstream work
+- `project_health`: status/type/priority distributions, graph metrics
+- `commands`: copy-paste shell commands for next steps
 
 ```bash
-bd daemons list               # Show running daemons
-bd daemons health             # Check daemon health
-bd daemons killall            # Clean up stale sockets/processes
+bv --robot-triage        # THE MEGA-COMMAND: start here
+bv --robot-next          # Minimal: just the single top pick + claim command
+
+# Token-optimized output (TOON) for lower LLM context usage:
+bv --robot-triage --format toon
+export BV_OUTPUT_FORMAT=toon
+bv --robot-next
 ```
+
+#### Other Commands
+
+**Planning:**
+| Command | Returns |
+|---------|---------|
+| `--robot-plan` | Parallel execution tracks with `unblocks` lists |
+| `--robot-priority` | Priority misalignment detection with confidence |
+
+**Graph Analysis:**
+| Command | Returns |
+|---------|---------|
+| `--robot-insights` | Full metrics: PageRank, betweenness, HITS (hubs/authorities), eigenvector, critical path, cycles, k-core, articulation points, slack |
+| `--robot-label-health` | Per-label health: `health_level` (healthy\|warning\|critical), `velocity_score`, `staleness`, `blocked_count` |
+| `--robot-label-flow` | Cross-label dependency: `flow_matrix`, `dependencies`, `bottleneck_labels` |
+| `--robot-label-attention [--attention-limit=N]` | Attention-ranked labels by: (pagerank × staleness × block_impact) / velocity |
+
+**History & Change Tracking:**
+| Command | Returns |
+|---------|---------|
+| `--robot-history` | Bead-to-commit correlations: `stats`, `histories` (per-bead events/commits/milestones), `commit_index` |
+| `--robot-diff --diff-since <ref>` | Changes since ref: new/closed/modified issues, cycles introduced/resolved |
+
+**Other Commands:**
+| Command | Returns |
+|---------|---------|
+| `--robot-burndown <sprint>` | Sprint burndown, scope changes, at-risk items |
+| `--robot-forecast <id\|all>` | ETA predictions with dependency-aware scheduling |
+| `--robot-alerts` | Stale issues, blocking cascades, priority mismatches |
+| `--robot-suggest` | Hygiene: duplicates, missing deps, label suggestions, cycle breaks |
+| `--robot-graph [--graph-format=json\|dot\|mermaid]` | Dependency graph export |
+| `--export-graph <file.html>` | Self-contained interactive HTML visualization |
+
+#### Scoping & Filtering
+
+```bash
+bv --robot-plan --label backend              # Scope to label's subgraph
+bv --robot-insights --as-of HEAD~30          # Historical point-in-time
+bv --recipe actionable --robot-plan          # Pre-filter: ready to work (no blockers)
+bv --recipe high-impact --robot-triage       # Pre-filter: top PageRank scores
+bv --robot-triage --robot-triage-by-track    # Group by parallel work streams
+bv --robot-triage --robot-triage-by-label    # Group by domain
+```
+
+#### Understanding Robot Output
+
+**All robot JSON includes:**
+- `data_hash` — Fingerprint of source beads.jsonl (verify consistency across calls)
+- `status` — Per-metric state: `computed|approx|timeout|skipped` + elapsed ms
+- `as_of` / `as_of_commit` — Present when using `--as-of`; contains ref and resolved SHA
+
+**Two-phase analysis:**
+- **Phase 1 (instant):** degree, topo sort, density — always available immediately
+- **Phase 2 (async, 500ms timeout):** PageRank, betweenness, HITS, eigenvector, cycles — check `status` flags
+
+**For large graphs (>500 nodes):** Some metrics may be approximated or skipped. Always check `status`.
+
+#### jq Quick Reference
+
+```bash
+bv --robot-triage | jq '.quick_ref'                        # At-a-glance summary
+bv --robot-triage | jq '.recommendations[0]'               # Top recommendation
+bv --robot-plan | jq '.plan.summary.highest_impact'        # Best unblock target
+bv --robot-insights | jq '.status'                         # Check metric readiness
+bv --robot-insights | jq '.Cycles'                         # Circular deps (must fix!)
+bv --robot-label-health | jq '.results.labels[] | select(.health_level == "critical")'
+```
+
+**Performance:** Phase 1 instant, Phase 2 async (500ms timeout). Prefer `--robot-plan` over `--robot-insights` when speed matters. Results cached by data hash.
+
+Use bv instead of parsing beads.jsonl—it computes PageRank, critical paths, cycles, and parallel tracks deterministically.
 
 ---
 
@@ -162,16 +250,16 @@ bd daemons killall            # Clean up stale sockets/processes
 ### 1. Orient
 
 ```bash
-bd ready --json      # See unblocked, prioritized work
-bd stats --json      # Project overview (open/closed/blocked counts)
+bv --robot-triage      # Prioritized work, recommendations, project health
+bv --robot-next        # Quick: single top pick + claim command
 ```
 
-Select highest priority ready issue OR continue in-progress work.
+Select the top recommendation OR continue in-progress work.
 
 ### 2. Pick Work
 
 ```bash
-bd update <id> --status in_progress   # Claim it
+br update <id> --status in_progress   # Claim it
 ```
 
 ### 3. Plan (if needed)
@@ -197,7 +285,7 @@ When planning artifacts are ready, create beads issues from `tasks.md`:
 
 ```bash
 # Create epic for the change
-bd create "<change-name>" -t epic -p 1 -l "openspec:<change-name>" -d "## Overview
+br create "<change-name>" -t epic -p 1 -l "openspec:<change-name>" -d "## Overview
 <change description>
 
 ## Reference
@@ -208,7 +296,7 @@ bd create "<change-name>" -t epic -p 1 -l "openspec:<change-name>" -d "## Overvi
 - <how to verify completion>"
 
 # For each task in tasks.md, create a child issue with FULL context
-bd create "<task description>" -t task -p 2 -l "openspec:<change-name>" -d "## Spec Reference
+br create "<task description>" -t task -p 2 -l "openspec:<change-name>" -d "## Spec Reference
 openspec/changes/<change-name>/specs/<capability>/spec.md
 
 ## Requirements
@@ -224,7 +312,7 @@ openspec/changes/<change-name>/specs/<capability>/spec.md
 - <relevant architectural decisions from design.md>"
 ```
 
-**Issues must be self-contained.** The test: could someone implement this issue correctly with ONLY the `bd` description and access to the codebase? If not, add more context.
+**Issues must be self-contained.** The test: could someone implement this issue correctly with ONLY the `br` description and access to the codebase? If not, add more context.
 
 **Three-field separation for rich issues:**
 
@@ -240,7 +328,7 @@ Write code directly, referencing OpenSpec artifacts and bead descriptions. No `/
 
 File any discovered issues during work:
 ```bash
-bd create "Found: <issue>" -t bug -p 2 --discovered-from <current-id> -d "## Description
+br create "Found: <issue>" -t bug -p 2 --discovered-from <current-id> -d "## Description
 <what was found>
 
 ## Context
@@ -254,14 +342,17 @@ bd create "Found: <issue>" -t bug -p 2 --discovered-from <current-id> -d "## Des
 # Delete planning artifacts (git history preserves them)
 rm -rf openspec/changes/<name>
 
-# Commit cleanup and close issues
+# Commit artifact cleanup
 git add -A
-git commit -m "chore: cleanup planning artifacts (bd-<epic-id>)"
-bd close <id1> <id2> <id3> --reason "Completed"
+git commit -m "chore: cleanup planning artifacts (br-<epic-id>)"
 
-# Sync and push
-bd sync && git push
+# Close beads issues
+br close <id1> <id2> <id3> --reason "Completed"
 ```
+
+Then follow the [canonical sync sequence](#sync-mechanics) to flush beads changes, commit, and push.
+
+**If ending your session**, follow the full [Landing the Plane](#landing-the-plane-session-completion) checklist — it includes syncing plus quality gates, context hand-off, and cleanup steps.
 
 ---
 
@@ -269,7 +360,7 @@ bd sync && git push
 
 ### Every Commit Needs a Bead
 
-No commit without an associated bead issue. No exceptions (except `bd sync` commits which are automated).
+No commit without an associated bead issue. No exceptions.
 
 ```bash
 # Before you commit, ensure:
@@ -277,18 +368,18 @@ No commit without an associated bead issue. No exceptions (except `bd sync` comm
 # 2. The bead is in_progress
 # 3. You reference the TASK bead ID (not epic ID)
 
-git commit -m "feat: add mobile nav component (bd-<task-id>)"
+git commit -m "feat: add mobile nav component (br-<task-id>)"
 ```
 
 ### Commit Message Format
 
 ```
-<type>: <description> (bd-<task-id>)
+<type>: <description> (br-<task-id>)
 ```
 
 Types: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `perf`, `style`
 
-**Use parentheses `(bd-xxx)`, not brackets.** This format enables `bd doctor` to detect orphaned issues by cross-referencing open issues against git history.
+**Use parentheses `(br-xxx)`, not brackets.** This format enables `br doctor` to detect orphaned issues by cross-referencing open issues against git history.
 
 ### What This Means in Practice
 
@@ -305,9 +396,9 @@ When launching multiple Claude Code agents to work concurrently:
 
 ### Pre-Launch Checklist
 
-1. **Create ALL beads FIRST** — Every task gets a `bd create` BEFORE any agent launches
+1. **Create ALL beads FIRST** — Every task gets a `br create` BEFORE any agent launches
 2. **Map files to tasks** — Ensure each agent has a non-overlapping set of files
-3. **Identify dependencies** — If Task B imports from Task A's output, they MUST be serialized. Use `bd dep add` to express this.
+3. **Identify dependencies** — If Task B imports from Task A's output, they MUST be serialized. Use `br dep add` to express this.
 
 ### Per-Agent Rules
 
@@ -321,21 +412,18 @@ Even if agents finish simultaneously, commit in dependency order:
 
 ```bash
 # REQUIRED — per-task commit pattern
-1. bd create "Task A" → project-abc
-2. bd create "Task B" → project-def
-3. bd create "Task C" → project-ghi
+1. br create "Task A" → project-abc
+2. br create "Task B" → project-def
+3. br create "Task C" → project-ghi
 4. Launch agents A, B, C (each knows bead ID + file scope)
-5. Agent A finishes → git add <A's files> && git commit -m "feat: ... (bd-project-abc)" → bd close abc
-6. Agent B finishes → git add <B's files> && git commit -m "feat: ... (bd-project-def)" → bd close def
-7. Agent C finishes → git add <C's files> && git commit -m "feat: ... (bd-project-ghi)" → bd close ghi
+5. Agent A finishes → git add <A's files> && git commit -m "feat: ... (br-project-abc)" → br close abc
+6. Agent B finishes → git add <B's files> && git commit -m "feat: ... (br-project-def)" → br close def
+7. Agent C finishes → git add <C's files> && git commit -m "feat: ... (br-project-ghi)" → br close ghi
 ```
 
 ### Forbidden
 
-```bash
-# NEVER DO THIS — "wave commit" pattern
-git add -A && git commit -m "feat: everything (bd-<epic-id>)"
-```
+**No wave commits** — each agent commits only its own task's files with the task bead ID. See [Commit Discipline](#commit-discipline) for the full rule and rationale.
 
 **Exceptions:** `git add -A` is acceptable ONLY for:
 - Cleanup commits that delete planning artifacts after per-task commits are complete
@@ -379,12 +467,12 @@ git checkout main && git pull
 /opsx:ff <change-name>
 
 # Create epic bead
-bd create "<change-name>" -t epic -p 1 -l "openspec:<change-name>" -d "..."
+br create "<change-name>" -t epic -p 1 -l "openspec:<change-name>" -d "..."
 
-# Push planning to main
-bd sync
+# Sync and push planning to main
+br sync --flush-only
 git add -A
-git commit -m "plan: <change-name> (bd-<epic-id>)"
+git commit -m "plan: <change-name> (br-<epic-id>)"
 git push
 
 # ═══════════════════════════════════════════════════════
@@ -393,14 +481,14 @@ git push
 git checkout -b feature/<change-name>
 
 # Create task beads from tasks.md
-bd create "<task 1>" -t task -p 2 -l "openspec:<change-name>" -d "..."
-bd create "<task 2>" -t task -p 2 -l "openspec:<change-name>" -d "..."
+br create "<task 1>" -t task -p 2 -l "openspec:<change-name>" -d "..."
+br create "<task 2>" -t task -p 2 -l "openspec:<change-name>" -d "..."
 
 # Implement each task
-bd update <task-1-id> --status in_progress
+br update <task-1-id> --status in_progress
 # ... write code ...
-bd sync && git add <files> && git commit -m "feat: <desc> (bd-<task-1-id>)"
-bd close <task-1-id> --reason "Completed"
+br sync --flush-only && git add .beads/ <files> && git commit -m "feat: <desc> (br-<task-1-id>)"
+br close <task-1-id> --reason "Completed"
 
 # Repeat for each task...
 
@@ -409,11 +497,11 @@ bd close <task-1-id> --reason "Completed"
 # ═══════════════════════════════════════════════════════
 # Delete planning artifacts
 rm -rf openspec/changes/<change-name>
-bd sync && git add -A && git commit -m "chore: cleanup planning artifacts (bd-<epic-id>)"
+br sync --flush-only && git add -A && git commit -m "chore: cleanup planning artifacts (br-<epic-id>)"
 git push -u origin feature/<change-name>
 
 # Close epic
-bd close <epic-id> --reason "Completed"
+br close <epic-id> --reason "Completed"
 
 # Create PR
 gh pr create --title "feat: <change-name>" --body "..."
@@ -446,7 +534,7 @@ git branch -d feature/<change-name>
 ### 1. File Issues for Remaining Work
 
 ```bash
-bd create "TODO: <description>" -t task -p 2 -d "## Requirements
+br create "TODO: <description>" -t task -p 2 -d "## Requirements
 - <what needs doing>
 ## Context
 - <relevant details>"
@@ -467,17 +555,17 @@ Delete any completed change directories: `rm -rf openspec/changes/<name>`
 ### 4. Update All Tracking
 
 ```bash
-bd close <id1> <id2> --reason "Completed"             # Finished work (batch close)
-bd update <id> --status in_progress                    # Partially done (WIP)
-bd update <id> --add-note "Session end: <context>"     # Context for next session
+br close <id1> <id2> --reason "Completed"             # Finished work (batch close)
+br update <id> --status in_progress                    # Partially done (WIP)
+br update <id> --add-note "Session end: <context>"     # Context for next session
 ```
 
 ### 5. Sync and Push (MANDATORY)
 
 ```bash
-bd sync
+br sync --flush-only
 git add -A
-git commit -m "chore: session end - <summary> (bd-<id>)"
+git commit -m "chore: session end - <summary> (br-<id>)"
 git push
 git status  # MUST show "up to date with origin"
 ```
@@ -495,14 +583,14 @@ git remote prune origin                          # Stale remote refs
 Provide a copy-pasteable prompt for the next session:
 
 ```
-Continue work on bd-<id>: <issue title>. <Brief context about what's been done and what's next>.
+Continue work on br-<id>: <issue title>. <Brief context about what's been done and what's next>.
 ```
 
 Also include:
 ```
 ## Next Session Context
 - Current epic: <id and name>
-- Ready work: `bd ready` shows N issues
+- Ready work: `bv --robot-triage` for prioritized recommendations
 - Blocked items: <any blockers>
 - Notes: <important context>
 ```
@@ -513,7 +601,7 @@ Also include:
 - NEVER stop before pushing — that leaves work stranded locally
 - NEVER say "ready to push when you are" — YOU must push
 - If `git push` fails, resolve the issue and retry until it succeeds
-- ALWAYS run `bd sync` before committing
+- ALWAYS run `br sync --flush-only` before committing, then `git add .beads/`
 
 ---
 
@@ -549,9 +637,9 @@ The following commands exist but are intentionally disabled in this workflow. Be
 ### Regular Health Checks
 
 ```bash
-bd doctor              # Health check
-bd doctor --fix        # Auto-fix issues (gitignore, daemon, sync divergence)
-bd stats --json        # Project statistics
+br doctor              # Health check
+br doctor --fix        # Auto-fix issues (gitignore, sync divergence)
+bv --robot-triage      # Project health, status distributions, graph metrics
 ```
 
 ### Compacting Old Issues
@@ -559,13 +647,98 @@ bd stats --json        # Project statistics
 Compaction targets closed issues 30+ days old to keep the database lean:
 
 ```bash
-bd compact --analyze --json    # Find compaction candidates
-bd compact --apply --id <id> --summary summary.txt   # Compact with summary
+br compact --analyze --json    # Find compaction candidates
+br compact --apply --id <id> --summary summary.txt   # Compact with summary
 ```
 
 ### Context Rot Prevention
 
 If Claude Code forgets about Beads mid-session:
 - **Kill sessions earlier** — One task per session for complex work
-- **Explicit reminders** — "Check `bd ready`" at session start
+- **Explicit reminders** — "Run `bv --robot-triage`" at session start
 - **Granular tasks** — Anything over ~2 minutes = its own bead
+
+---
+
+## MCP Agent Mail: coordination for multi-agent workflows
+
+### What it is
+
+- A mail-like layer that lets coding agents coordinate asynchronously via MCP tools and resources.
+- Provides identities, inbox/outbox, searchable threads, and advisory file reservations, with human-auditable artifacts in Git.
+
+### Why it's useful
+
+- Prevents agents from stepping on each other with explicit file reservations (leases) for files/globs.
+- Keeps communication out of your token budget by storing messages in a per-project archive.
+- Offers quick reads (`resource://inbox/...`, `resource://thread/...`) and macros that bundle common flows.
+
+### How to use effectively
+
+**1) Same repository**
+
+- Register an identity: call `ensure_project`, then `register_agent` using this repo's absolute path as `project_key`.
+- Reserve files before you edit: `file_reservation_paths(project_key, agent_name, ["src/**"], ttl_seconds=3600, exclusive=true)` to signal intent and avoid conflict.
+- Communicate with threads: use `send_message(..., thread_id="FEAT-123")`; check inbox with `fetch_inbox` and acknowledge with `acknowledge_message`.
+- Read fast: `resource://inbox/{Agent}?project=<abs-path>&limit=20` or `resource://thread/{id}?project=<abs-path>&include_bodies=true`.
+- Tip: set `AGENT_NAME` in your environment so the pre-commit guard can block commits that conflict with others' active exclusive file reservations.
+
+**2) Across different repos in one project (e.g., Next.js frontend + FastAPI backend)**
+
+- Option A (single project bus): register both sides under the same `project_key` (shared key/path). Keep reservation patterns specific (e.g., `frontend/**` vs `backend/**`).
+- Option B (separate projects): each repo has its own `project_key`; use `macro_contact_handshake` or `request_contact`/`respond_contact` to link agents, then message directly. Keep a shared `thread_id` (e.g., ticket key) across repos for clean summaries/audits.
+
+### Macros vs granular tools
+
+- Prefer macros when you want speed or are on a smaller model: `macro_start_session`, `macro_prepare_thread`, `macro_file_reservation_cycle`, `macro_contact_handshake`.
+- Use granular tools when you need control: `register_agent`, `file_reservation_paths`, `send_message`, `fetch_inbox`, `acknowledge_message`.
+
+### Common pitfalls
+
+- "from_agent not registered": always `register_agent` in the correct `project_key` first.
+- "FILE_RESERVATION_CONFLICT": adjust patterns, wait for expiry, or use a non-exclusive reservation when appropriate.
+- Auth errors: if JWT+JWKS is enabled, include a bearer token with a `kid` that matches server JWKS; static bearer is used only when JWT is disabled.
+
+---
+
+## Integrating with Beads (dependency-aware task planning)
+
+Beads provides a lightweight, dependency-aware issue database and a CLI (`br`) for selecting "ready work," setting priorities, and tracking status. It complements MCP Agent Mail's messaging, audit trail, and file-reservation signals. Project: [steveyegge/beads](https://github.com/steveyegge/beads)
+
+### Recommended conventions
+
+- **Single source of truth**: Use **Beads** for task status/priority/dependencies; use **Agent Mail** for conversation, decisions, and attachments (audit).
+- **Shared identifiers**: Use the Beads issue id (e.g., `br-123`) as the Mail `thread_id` and prefix message subjects with `[br-123]`.
+- **Reservations**: When starting a `br-###` task, call `file_reservation_paths(...)` for the affected paths; include the issue id in the `reason` and release on completion.
+
+### Typical flow (agents)
+
+1. **Pick ready work** (Beads)
+   - `br ready --json` → choose one item (highest priority, no blockers)
+2. **Reserve edit surface** (Mail)
+   - `file_reservation_paths(project_key, agent_name, ["src/**"], ttl_seconds=3600, exclusive=true, reason="br-123")`
+3. **Announce start** (Mail)
+   - `send_message(..., thread_id="br-123", subject="[br-123] Start: <short title>", ack_required=true)`
+4. **Work and update**
+   - Reply in-thread with progress and attach artifacts/images; keep the discussion in one thread per issue id
+5. **Complete and release**
+   - `br close br-123 --reason "Completed"` (Beads is status authority)
+   - `release_file_reservations(project_key, agent_name, paths=["src/**"])`
+   - Final Mail reply: `[br-123] Completed` with summary and links
+
+### Mapping cheat-sheet
+
+- **Mail `thread_id`** ↔ `br-###`
+- **Mail subject**: `[br-###] …`
+- **File reservation `reason`**: `br-###`
+- **Commit messages (optional)**: include `br-###` for traceability
+
+### Event mirroring (optional automation)
+
+- On `br update --status blocked`, send a high-importance Mail message in thread `br-###` describing the blocker.
+- On Mail "ACK overdue" for a critical decision, add a Beads label (e.g., `needs-ack`) or bump priority to surface it in `br ready`.
+
+### Pitfalls to avoid
+
+- Don't create or manage tasks in Mail; treat Beads as the single task queue.
+- Always include `br-###` in message `thread_id` to avoid ID drift across tools.

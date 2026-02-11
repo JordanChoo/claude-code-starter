@@ -1,6 +1,6 @@
 # Vue Firebase Starter (Claude Code Edition)
 
-A boilerplate template designed for **[Claude Code-first development](./CLAUDE.md)** powered by **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** and **[Beads](https://github.com/steveyegge/beads/)** — a spec-driven workflow with git-backed task tracking where you describe what you want, and AI implements it with full traceability.
+A boilerplate template designed for **[Claude Code-first development](./CLAUDE.md)** powered by **[OpenSpec](https://github.com/Fission-AI/OpenSpec)**, **[Beads](https://github.com/steveyegge/beads/)** (`br`), and **[Beads Viewer](https://github.com/Dicklesworthstone/beads_viewer)** (`bv`) — a spec-driven workflow with git-backed task tracking and graph-aware triage where you describe what you want, and AI implements it with full traceability.
 
 ## Philosophy
 
@@ -17,11 +17,12 @@ You don't need to know TypeScript, Vue, or Firebase deeply — Claude Code handl
 
 Without structure, AI-assisted development becomes chaotic — context gets lost between sessions, changes are hard to track, and you lose visibility into what's been done.
 
-OpenSpec + Beads solve this:
+OpenSpec + Beads + Beads Viewer solve this:
 
 - **Context survives sessions** — Specs, changes, and tasks persist locally in git, so Claude Code picks up where it left off
 - **Work is traceable** — Every code change links back to a spec and a tracked task
-- **Progress is visible** — `bd ready` shows what's unblocked, what's in progress, and what's left
+- **Progress is visible** — `bv --robot-triage` shows prioritized work, project health, and recommendations; `br ready` shows what's unblocked
+- **Graph-aware** — Beads Viewer computes PageRank, critical paths, and dependency analysis to surface the highest-impact work
 - **Lightweight** — Minimal overhead, no heavy PM infrastructure
 - **Agent-native** — Beads uses hash-based IDs and JSON storage designed for AI agents working in parallel
 
@@ -34,16 +35,20 @@ OpenSpec + Beads solve this:
 ## How It Works
 
 ```
-/opsx:new (describe what you want) → /opsx:ff (generate artifacts) → bd create (track tasks) → implement directly → bd close (complete)
+bv --robot-triage (find work) → /opsx:ff (plan if needed) → br create (track tasks) → implement → br close (complete) → br sync --flush-only (persist)
 ```
 
-**OpenSpec** handles the *what* (specs, changes, artifacts). **Beads** handles the *tracking* (tasks, dependencies, progress). Both persist in git, so nothing gets lost.
+**Beads Viewer** (`bv`) handles the *triage* (prioritization, graph analysis, what to work on next). **OpenSpec** handles the *what* (specs, changes, artifacts). **Beads** (`br`) handles the *tracking* (tasks, dependencies, progress). All persist in git, so nothing gets lost.
 
 ## What's Included
 
 **Core Workflow:**
 - **[OpenSpec](https://github.com/Fission-AI/OpenSpec)** — Spec-driven development with structured change tracking
-- **[Beads](https://github.com/steveyegge/beads/)** — Git-backed task tracking designed for AI agents
+- **[Beads](https://github.com/steveyegge/beads/)** (`br`) — Git-backed task tracking designed for AI agents
+- **[Beads Viewer](https://github.com/Dicklesworthstone/beads_viewer)** (`bv`) — Graph-aware triage engine with dependency analysis, PageRank, and critical path detection
+
+**Coordination:**
+- **[MCP Agent Mail](https://github.com/Dicklesworthstone/mcp_agent_mail)** — Asynchronous coordination for multi-agent workflows with file reservations and audit trails
 
 **Safety:**
 - **[DCG](https://github.com/Dicklesworthstone/destructive_command_guard)** — Destructive Command Guard hook that blocks dangerous commands before execution
@@ -63,9 +68,10 @@ OpenSpec + Beads solve this:
 - Node.js 18+ ([download](https://nodejs.org))
 - A Firebase project ([create one](https://console.firebase.google.com))
 - Claude Code: `npm install -g @anthropic-ai/claude-code` ([docs](https://docs.anthropic.com/en/docs/claude-code/overview))
-- Beads CLI: `npm install -g @beads/bd` ([docs](https://github.com/steveyegge/beads/))
-(Note: If `npm install` fails, ensure you have access to the `@beads` npm registry or consult Beads documentation for alternative installation methods.)
+- Beads CLI: Install `br` from [beads_rust](https://github.com/steveyegge/beads/) ([docs](https://github.com/steveyegge/beads/))
+- Beads Viewer: Install `bv` from [beads_viewer](https://github.com/Dicklesworthstone/beads_viewer) ([docs](https://github.com/Dicklesworthstone/beads_viewer))
 - DCG (Destructive Command Guard): see [install instructions](#destructive-command-guard-dcg) below
+- MCP Agent Mail *(optional, for multi-agent coordination)*: [mcp_agent_mail](https://github.com/Dicklesworthstone/mcp_agent_mail)
 
 ### Setup
 
@@ -103,48 +109,52 @@ Follow the prompts to authenticate.
 
 ### Starting Development
 
-All work flows through OpenSpec and Beads. This keeps your work organized and helps Claude Code understand context across sessions.
+All work flows through Beads Viewer, OpenSpec, and Beads. Use `bv` to find prioritized work, OpenSpec to plan non-trivial changes, and `br` to track everything.
 
 **1. Initialize (first time only):**
 ```bash
 openspec init --tools claude
-bd init
+br init
 ```
 
-**2. Start a new change:**
+**2. Find work to do:**
 ```bash
-/opsx:new <name>
+bv --robot-triage      # Prioritized recommendations, project health, quick wins
+bv --robot-next        # Just the single top pick with a claim command
 ```
-Describe what you want to build in plain language — features, user flows, requirements.
+Start every session with triage. `bv` analyzes dependencies, priorities, and graph metrics to surface the highest-impact work. For new projects with no existing tasks, skip to step 3.
 
-**3. Fast-forward through artifact creation:**
+**3. Plan the change (if needed):**
 ```bash
 /opsx:ff <name>
 ```
-Claude Code analyzes your change and creates structured artifacts (proposal, specs, design, tasks).
+Claude Code analyzes your change and creates structured artifacts (proposal, specs, design, tasks). For trivial fixes, skip this step and go straight to creating tasks.
 
 **4. Create tasks to track work:**
 ```bash
-bd create "Implement user auth API" -t task -p 2 -d "## Requirements
+br create "Implement user auth API" -t task -p 2 -d "## Requirements
 - What needs to be done
 ## Acceptance Criteria
 - How to verify it's done"
 
-bd create "Add login UI component" -t task -p 2 -d "..."
+br create "Add login UI component" -t task -p 2 -d "..."
 ```
-Beads tracks each task in `.beads/`, versioned alongside your code. Every `bd create` **must** include `-d` with a description.
+Beads tracks each task in `.beads/`, versioned alongside your code. Every `br create` **must** include `-d` with a description.
 
 **5. Implement the tasks:**
 ```bash
-bd update <id> --status in_progress  # claim a task
+br update <id> --status in_progress  # claim a task
 # ... write code directly, referencing OpenSpec artifacts ...
-bd close <id> --reason "Completed"   # mark complete
+br close <id> --reason "Completed"   # mark complete
 ```
 
 **6. Clean up when complete:**
 ```bash
 rm -rf openspec/changes/<name>       # delete planning artifacts
-bd sync && git push                  # sync and push
+br sync --flush-only                 # export to JSONL
+git add .beads/
+git commit -m "sync beads"
+git push
 ```
 
 ### Quick Commands Reference
@@ -157,15 +167,24 @@ bd sync && git push                  # sync and push
 | `/opsx:new <name>` | Start a new change step-by-step |
 | `/opsx:ff <name>` | Generate all planning artifacts at once |
 
+**Beads Viewer (triage — start every session here):**
+
+| Command | Purpose |
+|---------|---------|
+| `bv --robot-triage` | Prioritized work, project health, recommendations |
+| `bv --robot-next` | Single top pick with claim command |
+| `bv --robot-plan` | Parallel execution tracks with dependency info |
+| `bv --robot-alerts` | Stale issues, blocking cascades, priority mismatches |
+
 **Beads (execution tracking):**
 
 | Command | Purpose |
 |---------|---------|
-| `bd ready` | Show unblocked tasks ready for work |
-| `bd create "Title" -t task -p 2 -d "..."` | Create a task (must include `-d`) |
-| `bd update <id> --status in_progress` | Claim a task |
-| `bd close <id> --reason "Completed"` | Mark a task as complete |
-| `bd sync` | Sync tracking with git |
+| `br ready` | Show unblocked tasks ready for work |
+| `br create "Title" -t task -p 2 -d "..."` | Create a task (must include `-d`) |
+| `br update <id> --status in_progress` | Claim a task |
+| `br close <id> --reason "Completed"` | Mark a task as complete |
+| `br sync --flush-only` | Export tracking to JSONL (then `git add .beads/ && git commit`) |
 
 ### Ad-Hoc Requests
 
@@ -252,6 +271,85 @@ dcg explain "git reset --hard"
 
 DCG will explain the rule and suggest safer alternatives. See [.claude/rules/destructive-command-guard.md](.claude/rules/destructive-command-guard.md) for full configuration.
 
+## MCP Agent Mail (Multi-Agent Coordination)
+
+[MCP Agent Mail](https://github.com/Dicklesworthstone/mcp_agent_mail) is an **optional** coordination layer for running multiple Claude Code agents in parallel. It provides asynchronous messaging, file reservations (leases), and human-auditable artifacts in Git — preventing agents from stepping on each other's work.
+
+**You only need this if** you're running multiple Claude Code agents concurrently (e.g., via git worktrees or the `parallel-worker` agent). For single-agent workflows, skip this section.
+
+### What It Provides
+
+| Capability | Description |
+|------------|-------------|
+| **File reservations** | Exclusive or shared leases on file paths/globs to prevent edit conflicts |
+| **Async messaging** | Threaded inbox/outbox so agents can communicate without consuming token budget |
+| **Identity management** | Each agent registers with a name and project key |
+| **Audit trail** | All messages and reservations are stored in a per-project Git-tracked archive |
+
+### Install Agent Mail
+
+Follow the installation instructions at [mcp_agent_mail](https://github.com/Dicklesworthstone/mcp_agent_mail).
+
+### Configure the MCP Server
+
+Add the Agent Mail server to your Claude Code settings. In `.claude/settings.local.json` (or `~/.claude/settings.json` for global access):
+
+```json
+{
+  "mcpServers": {
+    "agent-mail": {
+      "command": "mcp-agent-mail",
+      "args": ["--project-key", "/absolute/path/to/your/project"]
+    }
+  }
+}
+```
+
+> **Note:** Replace the path with your actual project root. The `project_key` is the absolute path to the repository — all agents working on the same repo must use the same key.
+
+### Environment Setup
+
+Set `AGENT_NAME` in your shell environment so the pre-commit guard can detect file reservation conflicts:
+
+```bash
+export AGENT_NAME="my-agent"
+```
+
+Each concurrent agent should have a unique name (e.g., `agent-api`, `agent-ui`, `agent-tests`).
+
+### Quick Usage
+
+Once configured, agents coordinate via MCP tools:
+
+```
+# Register identity (each agent, once per session)
+register_agent(project_key, agent_name)
+
+# Reserve files before editing (prevents conflicts)
+file_reservation_paths(project_key, agent_name, ["src/components/**"], ttl_seconds=3600, exclusive=true)
+
+# Communicate via threads (tied to Beads issue IDs)
+send_message(project_key, agent_name, thread_id="br-123", subject="[br-123] Starting auth work")
+
+# Release reservations when done
+release_file_reservations(project_key, agent_name, paths=["src/components/**"])
+```
+
+**Prefer macros for speed:** `macro_start_session`, `macro_file_reservation_cycle`, and `macro_contact_handshake` bundle common multi-step flows into single calls.
+
+### Beads Integration
+
+Agent Mail threads map directly to Beads issue IDs for full traceability:
+
+| Agent Mail field | Beads mapping |
+|------------------|---------------|
+| `thread_id` | `br-###` (issue ID) |
+| Message `subject` | `[br-###] <description>` |
+| Reservation `reason` | `br-###` |
+| Commit messages | Include `br-###` for traceability |
+
+See `AGENTS.md` for the complete Agent Mail reference, including cross-repo coordination, granular vs macro tools, and common pitfalls.
+
 ## Git Worktrees (Parallel Agent Work)
 
 This template supports [git worktrees](https://git-scm.com/docs/git-worktree) for running multiple Claude Code agents in parallel on the same repository. Each agent works in its own worktree, avoiding file conflicts.
@@ -313,7 +411,7 @@ The `parallel-worker` agent (`.claude/agents/parallel-worker.md`) coordinates th
 2. **Sub-agents** work independently in their own worktrees — no file conflicts
 3. **Main agent** consolidates results and cleans up worktrees
 
-Each sub-agent commits only its assigned files, and commits are serialized in dependency order. See `AGENTS.md` for the full parallel agent rules and commit discipline.
+Each sub-agent commits only its assigned files, and commits are serialized in dependency order. For file conflict prevention beyond worktrees, [MCP Agent Mail](https://github.com/Dicklesworthstone/mcp_agent_mail) provides explicit file reservations (leases) and asynchronous messaging between agents. See `AGENTS.md` for the full parallel agent rules, commit discipline, and Agent Mail integration.
 
 ### Cleanup
 
