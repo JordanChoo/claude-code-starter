@@ -2,6 +2,51 @@
 
 > Think carefully and implement the most concise solution that changes as little code as possible.
 
+## Session Start Protocol (MANDATORY)
+
+> **STOP**: Before doing ANY work, complete these steps IN ORDER.
+
+1. **Read `AGENTS.md`** — Complete workflow, commit discipline, coordination rules
+2. **Start Agent Mail session** — `macro_start_session` with this project's absolute path and `file_reservation_paths`
+3. **Resolve conflicts** — If step 2 returned `file_reservations.conflicts`, **STOP**. Follow the Conflict Resolution Protocol in `AGENTS.md`. Do NOT proceed until conflicts are resolved or confirmed stale.
+4. **Check inbox** — Read messages from other agents before planning work
+5. **Verify bead ownership** — If your target bead is already `in_progress`, check its Agent Mail thread for an active agent. Only claim it if the prior agent is confirmed stale.
+6. **Announce intent** — `send_message` with `thread_id="claude-<bead-id>"` before starting
+
+Skipping these steps causes uncoordinated work, merge conflicts, and duplicated effort.
+
+## Pre-Implementation Checklist (MANDATORY)
+
+> **STOP**: After the Session Start Protocol and before editing ANY file, evaluate these gates.
+
+### Branching Strategy
+
+Check the work type against the Git Branch Strategy table in `AGENTS.md`:
+
+| Work Type | Branch? |
+|-----------|---------|
+| Epic / multi-task initiative | **YES** — `feature/<name>` |
+| New feature spanning multiple files | **YES** — `feature/<name>` |
+| Architectural change | **YES** — `feature/<name>` |
+| Work with OpenSpec planning | **YES** — `feature/<name>` |
+| Single-commit bug fix | NO — direct to `main` |
+| Documentation update | NO — direct to `main` |
+| Config change | NO — direct to `main` |
+
+**If YES:** Create the feature branch before any edits. See `AGENTS.md` "Complete Feature Branch Workflow" for the full sequence.
+
+### Pre-Edit Verification
+
+Before the first file edit, confirm:
+
+1. [ ] **Correct branch** — Am I on the right branch for this work type?
+2. [ ] **Bead exists** — Is there a bead for this work? (`br show <id>`)
+3. [ ] **Bead is in_progress** — (`br update <id> --status in_progress`)
+4. [ ] **No file reservation conflicts** — Did Agent Mail confirm no conflicts? If conflicts were reported, was the Conflict Resolution Protocol completed?
+5. [ ] **No active agent on this bead** — Was bead ownership verified per Session Start Protocol step 5?
+
+Skipping this checklist leads to commits on wrong branches that cannot be easily undone after push.
+
 ## Project Overview
 
 <!-- TODO: Fill in your project-specific details -->

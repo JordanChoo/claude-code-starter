@@ -560,7 +560,19 @@ br update <id> --status in_progress                    # Partially done (WIP)
 br update <id> --add-note "Session end: <context>"     # Context for next session
 ```
 
-### 5. Sync and Push (MANDATORY)
+### 5. Agent Mail Sign-Off
+
+```bash
+# Release all file reservations
+release_file_reservations(project_key, agent_name)
+
+# Send sign-off message on your work thread
+send_message(..., thread_id="claude-<bead-id>",
+  subject="[claude-<id>] Signing off",
+  body_md="Session complete. File reservations released.")
+```
+
+### 6. Sync and Push (MANDATORY)
 
 ```bash
 br sync --flush-only
@@ -570,7 +582,7 @@ git push
 git status  # MUST show "up to date with origin"
 ```
 
-### 6. Clean Up
+### 7. Clean Up
 
 ```bash
 git stash clear                                  # If appropriate
@@ -578,7 +590,7 @@ git branch -d feature/<name>                     # Merged branches
 git remote prune origin                          # Stale remote refs
 ```
 
-### 7. Hand Off Context
+### 8. Hand Off Context
 
 Provide a copy-pasteable prompt for the next session:
 
@@ -698,6 +710,85 @@ If Claude Code forgets about Beads mid-session:
 - "from_agent not registered": always `register_agent` in the correct `project_key` first.
 - "FILE_RESERVATION_CONFLICT": adjust patterns, wait for expiry, or use a non-exclusive reservation when appropriate.
 - Auth errors: if JWT+JWKS is enabled, include a bearer token with a `kid` that matches server JWKS; static bearer is used only when JWT is disabled.
+
+### Conflict Resolution Protocol (MANDATORY)
+
+> **STOP**: When `macro_start_session` or `file_reservation_paths` returns **any** items in `conflicts`, you MUST follow this protocol before proceeding. Do NOT dismiss conflicts.
+
+#### 1. STOP — Do NOT proceed with any file edits
+
+No work until conflicts are resolved. Advisory reservations exist to be respected.
+
+#### 2. Investigate the conflicting agent
+
+```
+whois(project_key, agent_name, include_recent_commits=true)
+```
+
+Check their `last_active_ts`, `inception_ts`, and `task_description`.
+
+#### 3. Determine if the agent is stale or active
+
+| Signal | Meaning | Action |
+|--------|---------|--------|
+| `last_active_ts == inception_ts` AND no messages on bead thread | Dead session — registered but never worked | Force-release and proceed (step 4) |
+| `last_active_ts` recent AND messages exist on thread | **Active agent** | Coordinate or wait (step 5) |
+| `expires_ts` already in the past | Expired reservation | Safe to proceed — no action needed |
+
+#### 4. Force-release stale reservations
+
+If the agent is confirmed stale:
+
+```
+force_release_file_reservation(project_key, your_agent_name, reservation_id,
+  note="Agent <name> stale: last_active == inception, no thread messages")
+```
+
+Document the release in the Agent Mail thread:
+
+```
+send_message(..., thread_id="claude-<bead-id>",
+  subject="[claude-<id>] Force-released stale reservations from <agent>",
+  body_md="Agent <name> was stale. Released their reservations to unblock work.")
+```
+
+#### 5. If the agent is active — DO NOT proceed
+
+Send a coordination message and wait:
+
+```
+send_message(..., to=["<active-agent>"], thread_id="claude-<bead-id>",
+  subject="[claude-<id>] Conflict: requesting file access",
+  body_md="I need to work on <files>. Can you release or coordinate?",
+  ack_required=true, importance="high")
+```
+
+If no response within a reasonable time, **escalate to the human operator** via `AskUserQuestion`. Never force-release an active agent's reservations.
+
+#### 6. Verify bead ownership
+
+Before claiming a bead as `in_progress`:
+
+```bash
+br show <id> --json
+```
+
+If the bead is already `in_progress`, search Agent Mail threads for the bead ID. Only claim it if the prior agent is confirmed stale (per step 3).
+
+### Pre-commit Guard
+
+Agent Mail provides a pre-commit guard that blocks commits touching files reserved by other agents. This adds hard enforcement at commit time.
+
+**For projects using husky** (like this one), add the guard to `.husky/pre-commit`:
+
+```bash
+# .husky/pre-commit
+npx lint-staged
+# Agent Mail file reservation guard (requires AGENT_NAME env var)
+# python -m mcp_agent_mail.hooks.precommit_guard "$PROJECT_KEY"
+```
+
+> **Note:** Set `AGENT_NAME` in your shell environment so the guard can identify the committing agent.
 
 ---
 
