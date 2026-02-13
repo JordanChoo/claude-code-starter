@@ -52,6 +52,7 @@ bv --robot-triage (find work) → /opsx:ff (plan if needed) → br create (track
 
 **Safety:**
 - **[DCG](https://github.com/Dicklesworthstone/destructive_command_guard)** — Destructive Command Guard hook that blocks dangerous commands before execution
+- **[Post-Compact Reminder](https://github.com/Dicklesworthstone/post_compact_reminder)** — Hook that detects context compaction and reminds Claude to re-read AGENTS.md
 
 **Pre-configured Stack:**
 - **Authentication** — Email/password and Google sign-in ready to use
@@ -270,6 +271,34 @@ dcg explain "git reset --hard"
 ```
 
 DCG will explain the rule and suggest safer alternatives. See [.claude/rules/destructive-command-guard.md](.claude/rules/destructive-command-guard.md) for full configuration.
+
+## Post-Compact Reminder
+
+[Post-Compact Reminder](https://github.com/Dicklesworthstone/post_compact_reminder) is a Claude Code hook that detects context compaction and injects a reminder to re-read `AGENTS.md`. During long sessions, Claude Code compacts the conversation to stay within context limits — after compaction, it loses memory of project rules, conventions, and coordination protocols. This hook ensures Claude re-reads the rules before continuing.
+
+### Install Post-Compact Reminder
+
+```bash
+curl -fsSL https://github.com/Dicklesworthstone/post_compact_reminder/raw/refs/heads/main/install-post-compact-reminder-workaround.sh | bash
+```
+
+The installer adds hooks to `~/.claude/settings.json` globally. No per-project configuration needed.
+
+### How It Works
+
+1. A **PreCompact hook** writes a marker file when compaction is about to happen
+2. A **UserPromptSubmit hook** checks for the marker on your next message
+3. If the marker exists, it injects a reminder telling Claude to re-read `AGENTS.md` before doing anything else
+
+### Verify Installation
+
+```bash
+# Check installation status
+./install-post-compact-reminder-workaround.sh --status
+
+# Test the hook
+./install-post-compact-reminder-workaround.sh --doctor
+```
 
 ## MCP Agent Mail (Multi-Agent Coordination)
 
