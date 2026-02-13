@@ -455,6 +455,51 @@ feature:                     └── [implement] ── [PR] ──┘
 
 **Why plan on main?** Planning is visible to everyone before work starts. Artifacts serve as documentation during review. Git history preserves them after deletion.
 
+### Branch Isolation with Git Worktrees (MANDATORY)
+
+> **CRITICAL**: Multiple Claude Code agents share a single repo checkout. Any `git checkout` by one agent switches the branch for ALL agents, causing file loss and corrupted state. **Always use `git worktree` for feature branch work.**
+
+#### Why Worktrees Are Required
+
+| Problem | Without Worktrees | With Worktrees |
+|---------|-------------------|----------------|
+| Concurrent agent switches branch | Your uncommitted files are lost | Isolated — other agents can't affect you |
+| lint-staged stash/pop during commit | May apply stash to wrong branch | Stash is worktree-local |
+| Branch verification between commands | Can change between any two commands | Stays on your branch permanently |
+
+#### Worktree Naming Convention
+
+```
+/tmp/<project>-<branch-suffix>
+```
+
+Examples:
+- Branch `feature/content-generation` → `/tmp/myapp-content-generation`
+- Branch `feature/dark-mode` → `/tmp/myapp-dark-mode`
+
+#### Worktree Lifecycle
+
+```bash
+# CREATE — at session start or when starting feature branch work
+git worktree add /tmp/<project>-<name> feature/<name>
+
+# WORK — all edits, tests, commits happen in the worktree
+cd /tmp/<project>-<name>
+npm install                    # Install deps in worktree
+# ... edit files, run tests, commit, push ...
+
+# CLEANUP — when done (session end or after PR merge)
+cd <project-root>              # Return to main repo
+git worktree remove /tmp/<project>-<name>
+```
+
+#### Important Notes
+
+- Run `npm install` in the worktree — `node_modules` is not shared
+- All git operations (commit, push, log) work normally inside the worktree
+- The worktree has its own working directory but shares the same `.git` database
+- Direct-to-main work (bug fixes, docs) does NOT need a worktree
+
 ### Complete Feature Branch Workflow
 
 ```bash
@@ -476,9 +521,12 @@ git commit -m "plan: <change-name> (br-<epic-id>)"
 git push
 
 # ═══════════════════════════════════════════════════════
-# PHASE 2: Implement on feature branch
+# PHASE 2: Create worktree for feature branch
 # ═══════════════════════════════════════════════════════
-git checkout -b feature/<change-name>
+git branch feature/<change-name>                                           # Create branch
+git worktree add /tmp/<project>-<change-name> feature/<change-name>        # Create worktree
+cd /tmp/<project>-<change-name>                                            # Enter worktree
+npm install                                                                # Install deps
 
 # Create task beads from tasks.md
 br create "<task 1>" -t task -p 2 -l "openspec:<change-name>" -d "..."
@@ -507,8 +555,10 @@ br close <epic-id> --reason "Completed"
 gh pr create --title "feat: <change-name>" --body "..."
 
 # ═══════════════════════════════════════════════════════
-# PHASE 4: After merge
+# PHASE 4: After merge — clean up worktree
 # ═══════════════════════════════════════════════════════
+cd <project-root>                                      # Return to main repo
+git worktree remove /tmp/<project>-<change-name>       # Remove worktree
 git checkout main && git pull
 git branch -d feature/<change-name>
 ```
@@ -585,6 +635,8 @@ git status  # MUST show "up to date with origin"
 ### 7. Clean Up
 
 ```bash
+# Remove any active worktrees from this session
+git worktree remove /tmp/<project>-<name>        # Feature branch worktree
 git stash clear                                  # If appropriate
 git branch -d feature/<name>                     # Merged branches
 git remote prune origin                          # Stale remote refs
