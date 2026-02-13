@@ -33,13 +33,19 @@ Check the work type against the Git Branch Strategy table in `AGENTS.md`:
 | Documentation update | NO — direct to `main` |
 | Config change | NO — direct to `main` |
 
-**If YES:** Create the feature branch before any edits. See `AGENTS.md` "Complete Feature Branch Workflow" for the full sequence.
+**If YES:** Create a **git worktree** for the feature branch — never use `git checkout` in the shared repo. See `AGENTS.md` "Branch Isolation with Git Worktrees" and "Complete Feature Branch Workflow" for the full sequence.
+
+```bash
+git branch feature/<name>                                              # Create branch
+git worktree add /tmp/<project>-<name> feature/<name>                  # Create worktree
+cd /tmp/<project>-<name> && npm install                                # Enter + install deps
+```
 
 ### Pre-Edit Verification
 
 Before the first file edit, confirm:
 
-1. [ ] **Correct branch** — Am I on the right branch for this work type?
+1. [ ] **Correct branch/worktree** — Am I on the right branch? If feature work, am I in the worktree (`/tmp/<project>-<name>`), NOT the main repo?
 2. [ ] **Bead exists** — Is there a bead for this work? (`br show <id>`)
 3. [ ] **Bead is in_progress** — (`br update <id> --status in_progress`)
 4. [ ] **No file reservation conflicts** — Did Agent Mail confirm no conflicts? If conflicts were reported, was the Conflict Resolution Protocol completed?
