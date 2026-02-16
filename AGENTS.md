@@ -536,6 +536,7 @@ br create "<task 2>" -t task -p 2 -l "openspec:<change-name>" -d "..."
 br update <task-1-id> --status in_progress
 # ... write code ...
 br sync --flush-only && git add .beads/ <files> && git commit -m "feat: <desc> (br-<task-1-id>)"
+git push -u origin feature/<change-name>   # Push after EVERY commit — never leave work local-only
 br close <task-1-id> --reason "Completed"
 
 # Repeat for each task...
@@ -666,6 +667,8 @@ Also include:
 - NEVER say "ready to push when you are" — YOU must push
 - If `git push` fails, resolve the issue and retry until it succeeds
 - ALWAYS run `br sync --flush-only` before committing, then `git add .beads/`
+- ALWAYS `git push` after every commit on feature branches — never leave work local-only
+- NEVER `br close` a bead without a preceding `git push` — closed beads must have their work on the remote
 
 ---
 
