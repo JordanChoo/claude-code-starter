@@ -528,9 +528,16 @@ git worktree add /tmp/<project>-<change-name> feature/<change-name>        # Cre
 cd /tmp/<project>-<change-name>                                            # Enter worktree
 npm install                                                                # Install deps
 
+# Create draft PR immediately for merge status visibility
+git push -u origin feature/<change-name>
+gh pr create --draft --title "feat: <change-name>" --body "WIP — do not merge"
+
 # Create task beads from tasks.md
 br create "<task 1>" -t task -p 2 -l "openspec:<change-name>" -d "..."
 br create "<task 2>" -t task -p 2 -l "openspec:<change-name>" -d "..."
+
+# Sync with main BEFORE starting implementation
+git fetch origin && git merge origin/main
 
 # Implement each task
 br update <task-1-id> --status in_progress
@@ -552,8 +559,8 @@ git push -u origin feature/<change-name>
 # Close epic
 br close <epic-id> --reason "Completed"
 
-# Create PR
-gh pr create --title "feat: <change-name>" --body "..."
+# Convert draft PR to ready for review
+gh pr ready
 
 # ═══════════════════════════════════════════════════════
 # PHASE 4: After merge — clean up worktree
@@ -629,6 +636,10 @@ send_message(..., thread_id="claude-<bead-id>",
 br sync --flush-only
 git add -A
 git commit -m "chore: session end - <summary> (br-<id>)"
+
+# If on a feature branch, integrate main before pushing so next agent starts clean
+git fetch origin && git merge origin/main
+
 git push
 git status  # MUST show "up to date with origin"
 ```
@@ -669,6 +680,9 @@ Also include:
 - ALWAYS run `br sync --flush-only` before committing, then `git add .beads/`
 - ALWAYS `git push` after every commit on feature branches — never leave work local-only
 - NEVER `br close` a bead without a preceding `git push` — closed beads must have their work on the remote
+- ALWAYS merge `origin/main` into your feature branch at session start and session end
+- ALWAYS create a draft PR when first pushing a feature branch — use `gh pr create --draft`
+- If a draft PR shows DIRTY status, resolving conflicts is the FIRST priority of the next session
 
 ---
 
