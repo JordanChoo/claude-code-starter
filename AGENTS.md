@@ -455,26 +455,6 @@ feature:                     └── [implement] ── [PR] ──┘
 
 **Why plan on main?** Planning is visible to everyone before work starts. Artifacts serve as documentation during review. Git history preserves them after deletion.
 
-### Branch Lifetime
-
-Feature branches that diverge too far from `main` become increasingly expensive to merge.
-
-| Branch Age | Action |
-|------------|--------|
-| < 3 days | Normal — merge `origin/main` at session start/end keeps it healthy |
-| 3-7 days | Review — is this branch on track to merge soon? |
-| > 7 days | Split — merge current work via PR, start a new branch for remaining tasks |
-
-If an epic takes 3 weeks, that's fine — but it should produce 2-3 PRs, not one massive PR at the end:
-
-```
-Week 1:  feature/epic-phase1 → PR → merge to main
-Week 2:  feature/epic-phase2 (from updated main) → PR → merge
-Week 3:  feature/epic-phase3 → PR → merge
-```
-
-The epic bead stays open across phases. Individual task beads close with each PR.
-
 ### Branch Isolation with Git Worktrees (MANDATORY)
 
 > **CRITICAL**: Multiple Claude Code agents share a single repo checkout. Any `git checkout` by one agent switches the branch for ALL agents, causing file loss and corrupted state. **Always use `git worktree` for feature branch work.**
