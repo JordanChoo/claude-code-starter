@@ -336,9 +336,31 @@ br create "Found: <issue>" -t bug -p 2 --discovered-from <current-id> -d "## Des
 - <relevant details>"
 ```
 
+#### E2E Test Gate
+
+Any bead that adds or modifies a **route or view** MUST have a companion E2E test bead:
+
+```bash
+# 1. Create the feature bead
+br create "Build interview scheduling UI" -t task -p 1 -d "..."
+
+# 2. Create companion test bead at same priority
+br create "E2E: Interview scheduling flows" -t task -p 1 -d "..."
+
+# 3. Link: test bead blocks feature bead from closing
+br update <test-id> --blocks <feature-id>
+```
+
+Skip the companion bead ONLY for: documentation-only changes, config changes, or backend-only changes with no UI impact.
+
+`bv --robot-triage` will flag the feature as blocked until its test bead is resolved.
+
 ### 6. Close
 
 ```bash
+# Verify no open test beads block this work
+br show <id>   # Check "blockedBy" is empty — if a test bead blocks this, complete it first
+
 # Delete planning artifacts (git history preserves them)
 rm -rf openspec/changes/<name>
 
